@@ -2,8 +2,8 @@
 /*
 Plugin Name: Easy WP LaTeX Lite
 Plugin URI: http://www.thulasidas.com/latex
-Description: Easiest way to show mathematical equations on your blog. Go to <a href="options-general.php?page=easy-latex.php">Settings &rarr; Easy WP LaTeX</a> to set it up, or use the "Settings" link on the right.
-Version: 3.00
+Description: Easiest way to show mathematical equations on your blog using LaTeX. Go to <a href="options-general.php?page=easy-latex.php">Settings &rarr; Easy WP LaTeX</a> to set it up, or use the "Settings" link on the right.
+Version: 3.01
 Author: Manoj Thulasidas
 Author URI: http://www.thulasidas.com
 */
@@ -248,8 +248,6 @@ It also uses the excellent Javascript color picker by <a href="http://jscolor.co
 
   function parseTex ($toParse)
   {
-    // tag specification (which tags are to be replaced)
-    // change it to
     $ezTeXOptions = $this->getAdminOptions();
     $tag = $ezTeXOptions['tag'] ;
     // $regex = '#' . $tag1 . '  *(.*?)' . $tag2 . '#si';
@@ -289,7 +287,7 @@ It also uses the excellent Javascript color picker by <a href="http://jscolor.co
       '" style="vertical-align:-20%;" class="tex" alt="' . $formula_text . '" />' ;
 
     // returning the image-tag, referring to the image
-    if($imgtext) return '<center>' . $formula_output . '</center>' ;
+    if($imgtext) return "<center>$formula_output</center>" ;
 
     return $formula_output ;
   }
@@ -328,13 +326,4 @@ if (class_exists("ezLaTeX")) {
     add_filter('plugin_action_links', array($ez_TeX, 'plugin_action'), -10, 2);
   }
 }
-
-
-/*
-To do:
-1. Make the Admin page optional (if add_filter('plugin_action_links',...) returns good.
-2. User defined bracketing tags, allowing multiple tags.
-
-*/
-
 ?>
