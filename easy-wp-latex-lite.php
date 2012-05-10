@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: Easy WP LaTeX Lite
+Plugin Name: Easy WP LaTeX
 Plugin URI: http://www.thulasidas.com/latex
-Description: Easiest way to show mathematical equations on your blog using LaTeX. Go to <a href="options-general.php?page=easy-wp-latex-lite.php">Settings &rarr; Easy WP LaTeX Lite</a> to set it up, or use the "Settings" link on the right.
-Version: 3.02
+Description: Easiest way to show mathematical equations on your blog using LaTeX. Go to <a href="options-general.php?page=easy-wp-latex-lite.php">Settings &rarr; Easy WP LaTeX</a> to set it up, or use the "Settings" link on the right.
+Version: 3.03
 Author: Manoj Thulasidas
 Author URI: http://www.thulasidas.com
 */
@@ -87,7 +87,7 @@ if (!class_exists("ezLaTeX")) {
 ?>
 
 <div class="wrap" style="width:800px">
-<h2>Easy WP LaTeX Lite Setup</h2>
+<h2>Easy WP LaTeX Setup</h2>
 
 <table class="form-table" width="500px">
 <tr><th scope="row"><h3>Instructions</h3></th></tr>
@@ -219,10 +219,10 @@ Background Color:
 <tr><td>
 <ul style="padding-left:10px;list-style-type:circle; list-style-position:inside;" >
 <li>
-<b>Easy WP LaTeX Lite</b> is based on <b>Latex for WordPess</b> by zhiqiang, and shares some features and core engine code with it.
+<b>Easy WP LaTeX</b> is based on <b>Latex for WordPess</b> by zhiqiang, and shares some features and core engine code with it.
 </li>
 <li>
-<?php printf(__('%s uses the excellent Javascript/DHTML tooltips by %s', 'easy-adsenser'), '<b>Easy WP LaTeX Lite</b>', '<a href="http://www.walterzorn.com" target="_blank" title="Javascript, DTML Tooltips"> Walter Zorn</a>.') ;
+<?php printf(__('%s uses the excellent Javascript/DHTML tooltips by %s', 'easy-adsenser'), '<b>Easy WP LaTeX</b>', '<a href="http://www.walterzorn.com" target="_blank" title="Javascript, DTML Tooltips"> Walter Zorn</a>.') ;
 ?>
 </li>
 <li>
@@ -309,7 +309,7 @@ if (class_exists("ezLaTeX")) {
       function ezLaTeX_ap() {
         global $ez_TeX ;
         if (function_exists('add_options_page')) {
-          $mName = 'Easy WP LaTeX Lite' ;
+          $mName = 'Easy WP LaTeX' ;
           add_options_page($mName, $mName, 9, basename(__FILE__),
             array(&$ez_TeX, 'printAdminPage'));
         }

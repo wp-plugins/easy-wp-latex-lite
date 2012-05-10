@@ -1,16 +1,16 @@
-=== Easy WP LaTeX Lite ===
+=== Easy WP LaTeX ===
 Contributors: manojtd
 Donate link: http://buy.thulasidas.com/easy-latex
 Tags: latex, tex, maths, equation, equations, formula, formulas
 Requires at least: 2.5
 Tested up to: 3.3
-Stable tag: 3.02
+Stable tag: 3.03
 
 Easy WP LaTeX provides a very easy way to display math and equations in your posts using LaTeX. Lets you customize colors and sizes of your equations.
 
 == Description ==
 
-*Easy WP LaTeX Lite* provides a very easy way to display equations or mathematical formulas  (typed in as TeX or LaTeX code) in your posts. It lets you customize colors and sizes of your equations to match your blog theme.
+*Easy WP LaTeX* provides a very easy way to display equations or mathematical formulas  (typed in as TeX or LaTeX code) in your posts. It lets you customize colors and sizes of your equations to match your blog theme.
 
 Most LaTeX/equation plugins I have seen suffer from a few drawbacks.
 
@@ -23,7 +23,7 @@ My plugin aims to be flexible, and easy to install (no geeky code editing etc.).
 
 = Pro Version =
 
-This release is the freely distributed, Lite version of *Easy WP LaTeX Lite*. It is fully functional. But the **[Pro Version](http://buy.thulasidas.com/easy-latex/ "Pro version of the Easy WP LaTeX plugin for only $2.95")** gives you more features and benefits. For instance, it gives you an option to cache the formula images so that your pages load faster. New features and bug fixes will first appear in the Pro version before being ported to this freely distributed Lite edition.
+This release is the freely distributed version of *Easy WP LaTeX*. It is fully functional. But the **[Pro Version](http://buy.thulasidas.com/easy-latex/ "Pro version of the Easy WP LaTeX plugin for only $2.95")** gives you more features and benefits. For instance, it gives you an option to cache the formula images so that your pages load faster. New features and bug fixes will first appear in the Pro version before being ported to this freely distributed edition.
 
 = Alternatives =
 1. *Latex for WordPess* by zhiqiang, on which this plugin is based, has caching and JS based image generation. But it lacks intuitive color matching and theme-dependent settings.
@@ -31,22 +31,22 @@ This release is the freely distributed, Lite version of *Easy WP LaTeX Lite*. It
 
 = New in this Release =
 
-Minor bug fix.
+Renaming the plugin -- dropping the word Lite.
 
 == Upgrade Notice ==
 
-= 3.02 =
+= 3.03 =
 
-Minor bug fix.
+Renaming the plugin -- dropping the word Lite.
 
 == Screenshots ==
 
-1. How to set the options for *Easy WP LaTeX Lite*.
-2. *Easy WP LaTeX Lite* in action - on my own blog.
+1. How to set the options for *Easy WP LaTeX*.
+2. *Easy WP LaTeX* in action - on my own blog.
 
 == Installation ==
 
-1. Upload the *Easy WP LaTeX Lite* plugin (the whole easy-wp-latex-lite folder) to the '/wp-content/plugins/' directory.
+1. Upload the *Easy WP LaTeX* plugin (the whole easy-wp-latex-lite folder) to the '/wp-content/plugins/' directory.
 2. Activate the plugin through the 'Plugins' menu in WordPress.
 3. Go to the Setup -> Easy WP LaTeX and set options.
 4. If instructed, set the file permission of the cache directory.
@@ -57,13 +57,14 @@ Minor bug fix.
 
 Two possible reasons.
 
-1. *Easy WP LaTeX Lite* is so simple and straight-forward that no question could be thought of.
+1. *Easy WP LaTeX* is so simple and straight-forward that no question could be thought of.
 1. More likely, the plugin is too new for any questions.
 
 == Change Log ==
 
 = Past =
 
+* V3.03: Renaming the plugin -- dropping the word Lite. [May 7, 2012]
 * V3.02: Minor bug fix. [Apr 21, 2012]
 * V3.01: Documentation changes and minor code cleanup. [Apr 21, 2012]
 * V3.00: Lite version release to WP repository. [Mar 3, 2012]
