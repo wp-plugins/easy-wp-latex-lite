@@ -1,10 +1,10 @@
 === Easy WP LaTeX ===
 Contributors: manojtd
-Donate link: http://buy.thulasidas.com/easy-latex
+Donate link: http://affiliates.thulasidas.com
 Tags: latex, tex, maths, equation, equations, formula, formulas
 Requires at least: 2.5
 Tested up to: 3.3
-Stable tag: 3.03
+Stable tag: 3.04
 
 Easy WP LaTeX provides a very easy way to display math and equations in your posts using LaTeX. Lets you customize colors and sizes of your equations.
 
@@ -31,13 +31,13 @@ This release is the freely distributed version of *Easy WP LaTeX*. It is fully f
 
 = New in this Release =
 
-Renaming the plugin -- dropping the word Lite.
+Testing for WP3.41.
 
 == Upgrade Notice ==
 
-= 3.03 =
+= 3.04 =
 
-Renaming the plugin -- dropping the word Lite.
+Testing for WP3.41.
 
 == Screenshots ==
 
@@ -64,6 +64,7 @@ Two possible reasons.
 
 = Past =
 
+* V3.04: Testing for WP3.41. [July 11, 2012]
 * V3.03: Renaming the plugin -- dropping the word Lite. [May 7, 2012]
 * V3.02: Minor bug fix. [Apr 21, 2012]
 * V3.01: Documentation changes and minor code cleanup. [Apr 21, 2012]
