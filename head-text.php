@@ -29,14 +29,14 @@ function renderHeadText($name, $plg) {
   $text = $link . $desc ;
   $price = $plg['price'] ;
   $moreInfo =
-    "&nbsp; <a href='http://buy.thulasidas.com/$name' title='Buy the Pro version of $value for \$$price. Instant download link.'>Pro Version</a>" ;
+    "<b><a href='http://buy.thulasidas.com/$name' title='Buy the Pro version of $value for \$$price. Instant download link.' onclick=\"popupwindow('http://buy.thulasidas.com/$name','Get {$plg['value']}', 1024, 768);return false;\">Pro Version</a></b>" ;
   $toolTip .= addslashes('<br />' . $moreInfo) ;
   $why = addslashes($plg['pro']) ;
   $version = 'Lite' ;
   echo "<b>Get Pro Version!</b>
-<a href='http://buy.thulasidas.com/$name' title='Buy the Pro version of the $name plugin. Instant download link.'><img src='$plugindir/ezpaypal.png' border='0' alt='ezPayPal -- Instant PayPal Shop.' class='alignright'/></a>
+<a href='http://buy.thulasidas.com/$name' title='Buy the Pro version of the $name plugin. Instant download link.' onclick=\"popupwindow('http://buy.thulasidas.com/$name','Get {$plg['value']}', 1024, 768);return false;\"><img src='$plugindir/ezpaypal.png' border='0' alt='ezPayPal -- Instant PayPal Shop.' class='alignright'/></a>
 <br />
-You are using the $version version of $value, which is available in two versions:
+You are using the $version version of $value, which is also available as in a Pro version.
 <ul><li>
 $moreInfo
 <li>$why And it costs only \$$price!</li>
@@ -50,8 +50,8 @@ function renderProText($name, $plg) {
   $toolTip = $plg['title'] ;
   $price = $plg['price'] ;
   $moreInfo =
-    "&nbsp; <a href='http://buy.thulasidas.com/$name/$name.zip' title='Download the Lite version of $value'>Lite Version </a>" .
-    "&nbsp; <a href='http://buy.thulasidas.com/$name' title='Buy the Pro version of $value for \$$price'>Pro Version</a>" ;
+    "&nbsp; <a href='http://buy.thulasidas.com/lite/$name.zip' title='Download the Lite version of $value'>Lite Version </a>" .
+    "&nbsp; <a href='http://buy.thulasidas.com/$name' title='Buy the Pro version of $value for \$$price' onclick=\"popupwindow('http://buy.thulasidas.com/$name','Get {$plg['value']}', 1024, 768);return false;\">Pro Version</a>" ;
   $toolTip .= addslashes('<br />' . $moreInfo) ;
   $why = addslashes($plg['pro']) ;
   echo '<div style="background-color:#ffcccc;padding:5px;border: solid 1px">
@@ -60,11 +60,16 @@ function renderProText($name, $plg) {
 </center>' ;
 
   $value .= '<b><i> Lite</i></b>' ;
-  echo "Thank you for using $value. The \"Pro\" version gives you more options$filter. Consider <a href='http://buy.thulasidas.com/$name' title='Pro version of this plugin. Instant download link.'>buying it</a>. It costs only \$$price." ;
+  echo "Thank you for using $value. The \"Pro\" version gives you more options$filter. Consider <a href='http://buy.thulasidas.com/$name' title='Pro version of this plugin. Instant download link.'  onclick=\"popupwindow('http://buy.thulasidas.com/$name','Get {$plg['value']}', 1024, 768);return false;\">buying it</a>. It costs only \$$price." ;
 
   echo "<div id='pro'>" ;
   renderHeadText($name, $plg) ;
   echo "</div>" ;
+}
+
+function renderAffiliate() {
+  $plugindir = get_option('siteurl') . '/' . PLUGINDIR . '/' .  basename(dirname(__FILE__)) ;
+  echo "<div style='padding:0px;border:none; width:300px' id='support' onmouseover=\"Tip('<b>ezAffiliates</b>: The most affiliate-centric revenue sharing model on the Web. Finally, you can make some serious returns on your web presence.<br /><b>Generous 50% Commission</b>: perhaps the highest rate of revenue sharing on the web. With just a couple of sales of this plugin, you will have recovered your purchase price!<br /><b>$10 Minimum Payout</b> so that you will not be waiting forever before you qualify for payment.<br /><b>Lifetime Tracking</b>: ezAffiliates uses cookie-less tracking technology to attribute every purchase of your lead to your account. Whatever your leads buy from us, whenever they do, will earn you commission. No cookie expiry!<br /><b>High Quality Products</b> such as this plugin, and other premium plugins and PHP packages.<br /><b>Diverse Markets</b>: Bloggers who blog about plugins, PayPal integration, affiliate marketing, MacOS apps and even eBooks will find ezAffiliates attractive and more effective that their current ad campaigns.', WIDTH, 295, TITLE, 'ezAffiliates', FIX, [this, 0, 0])\" onmouseout=\"UnTip()\" ><a href='http://affiliates.thulasidas.com'><img src='$plugindir/invite.gif' /></a></div>" ;
 }
 
 function renderSupportText($name, $plg, $long=true) {
@@ -75,11 +80,11 @@ function renderSupportText($name, $plg, $long=true) {
   $supportText .= "<br />$longText<span onmouseover=\"TagToTip('dropbox', WIDTH, 440, TITLE, 'What is DropBox?',STICKY, 1, CLOSEBTN, true, FIX, [this, -150, 2])\"><a href='http://db.tt/qsogWB1' title='Sign up for Dropbox -- free 2GB online storage on the cloud!' target='_blank'>2GB of <em>free</em> online storage</a></span>?" ;
   if ($long) $longText = "WordPress Hosting for " ;
   else $longText= 'Hosting for ' ;
-  $supportText .= "<br />$longText<span onmouseover=\"TagToTip('arvixe', WIDTH, 600, TITLE, 'Arvixe - My favorite provider!',STICKY, 1, CLOSEBTN, true, FIX, [this, -200, 2])\"><a href='http://www.arvixe.com/1933.html' target='_blank'>just $4/month</a></span>. " ;
+  $supportText .= "<br />$longText<span onmouseover=\"TagToTip('arvixe', WIDTH, 300, TITLE, 'Arvixe - My favorite provider!',STICKY, 1, CLOSEBTN, true, FIX, [this, -200, 2])\"><a href='http://www.arvixe.com/1933.html' target='_blank'>just $4/month</a></span>. " ;
   if ($long) $longText = "My books on " ;
   else $longText= 'Books: ' ;
-  $supportText .= "<br />$longText<span style=\"text-decoration:underline\" onmouseover=\"TagToTip('unreal', WIDTH, 205, TITLE, 'Buy &lt;em&gt;The Unreal Universe&lt;/em&gt;',STICKY, 1, CLOSEBTN, true, FIX, [this, 5, 2])\"><b><a href='http://www.amazon.com/exec/obidos/ASIN/9810575947/unrblo-20' target='_blank'>Physics</a></b></span> or " ;
-  $supportText .= "<span style=\"text-decoration:underline\" onmouseover=\"TagToTip('pqd', WIDTH, 205, TITLE, '&lt;em&gt;Principles of Quant. Devel.&lt;/em&gt;',STICKY, 1, CLOSEBTN, true, FIX, [this, 5, 2])\"><b><a href='http://www.amazon.com/exec/obidos/ASIN/0470745703/unrblo-20' target='_blank'>Money</a></b></span>." ;
+  $supportText .= "<br />$longText<span style=\"text-decoration:underline\" onmouseover=\"TagToTip('unreal', WIDTH, 205, TITLE, 'Buy &lt;em&gt;The Unreal Universe&lt;/em&gt;',STICKY, 1, CLOSEBTN, true, FIX, [this, 5, 2])\"><b><a href='http://buy.thulasidas.com/unreal' target='_blank'>Physics &amp; Philosophy</a></b></span> or " ;
+  $supportText .= "<span style=\"text-decoration:underline\" onmouseover=\"TagToTip('pqd', WIDTH, 205, TITLE, '&lt;em&gt;Principles of Quant. Devel.&lt;/em&gt;',STICKY, 1, CLOSEBTN, true, FIX, [this, 5, 2])\"><b><a href='http://www.amazon.com/exec/obidos/ASIN/0470745703/unrblo-20' target='_blank'>Money &amp; Finance</a></b></span>." ;
   echo $supportText ;
 }
 
@@ -87,7 +92,7 @@ function renderTipDivs($name) {
   $plugindir = get_option('siteurl') . '/' . PLUGINDIR . '/' .  basename(dirname(__FILE__)) ;
 echo <<<ENDDIVS
 <div id="arvixe">
-  <a href="http://www.arvixe.com/1933-27-1-310.html" target="_blank">Arvixe is my favorite hosting provider. Friendly service, extremely competitive rates, and of course a great affiliate program.</a>
+  <a href="http://www.arvixe.com/1933-27-1-310.html" target="_blank">Arvixe</a> is my favorite hosting provider. Friendly service, extremely competitive rates, and of course a great affiliate program.
 </div>
 
 <span id="dropbox">
@@ -167,13 +172,16 @@ ENDDIVS;
 
 echo '<td width="30%">' ;
 
-renderSupportText($plgName, $myPlugins[$plgName], $myPlugins[$plgName]['long']) ;
+if (rand(0,2) % 2 || $plgName == "easy-ads" || $plgName == "google-adsense") {
+  renderSupportText($plgName, $myPlugins[$plgName], $myPlugins[$plgName]['long']) ;
+  renderTipDivs($name) ;
+}
+else renderAffiliate() ;
 
 echo '</td>' ;
 echo '<td width="30%">' ;
 
 renderProText($plgName, $myPlugins[$plgName]) ;
-renderTipDivs($name) ;
 
 echo '</td>' ;
 
