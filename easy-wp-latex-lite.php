@@ -3,7 +3,7 @@
 Plugin Name: Easy WP LaTeX
 Plugin URI: http://www.thulasidas.com/latex
 Description: Easiest way to show mathematical equations on your blog using LaTeX. Go to <a href="options-general.php?page=easy-wp-latex-lite.php">Settings &rarr; Easy WP LaTeX</a> to set it up, or use the "Settings" link on the right.
-Version: 3.10
+Version: 3.11
 Author: Manoj Thulasidas
 Author URI: http://www.thulasidas.com
 */
@@ -254,7 +254,7 @@ It also uses the excellent Javascript color picker by <a href="http://jscolor.co
     $regex = '#\[math\] *(.*?)\[/math\]#si';
     if ($tag == 'latex') $regex = '#\$\$(.*?)\$\$#si';
     if ($tag == 'mtype') $regex = '#\\\[(.*?)\\\]#si';
-    return preg_replace_callback($regex, array(&$this, 'createTex'), $toParse);
+    return preg_replace_callback($regex, array($this, 'createTex'), $toParse);
   }
 
   function createTex($toTex)
@@ -311,7 +311,7 @@ if (class_exists("ezLaTeX")) {
         if (function_exists('add_options_page')) {
           $mName = 'Easy WP LaTeX' ;
           add_options_page($mName, $mName, 'activate_plugins', basename(__FILE__),
-            array(&$ez_TeX, 'printAdminPage'));
+            array($ez_TeX, 'printAdminPage'));
         }
       }
     }
@@ -322,7 +322,7 @@ if (class_exists("ezLaTeX")) {
 
     add_action('admin_menu', 'ezLaTeX_ap');
     add_action('activate_' . basename(dirname(__FILE__)) . '/' . basename(__FILE__),
-               array(&$ez_TeX, 'init'));
+               array($ez_TeX, 'init'));
     add_filter('plugin_action_links', array($ez_TeX, 'plugin_action'), -10, 2);
   }
 }
