@@ -3,7 +3,7 @@
 Plugin Name: Easy WP LaTeX
 Plugin URI: http://www.thulasidas.com/plugins/easy-latex
 Description: Easiest way to show mathematical equations on your blog using LaTeX. Go to <a href="options-general.php?page=easy-wp-latex-lite.php">Settings &rarr; Easy WP LaTeX</a> to set it up, or use the "Settings" link on the right.
-Version: 3.12
+Version: 3.20
 Author: Manoj Thulasidas
 Author URI: http://www.thulasidas.com
 */
@@ -89,9 +89,9 @@ if (!class_exists("ezLaTeX")) {
 <div class="wrap" style="width:800px">
 <h2>Easy WP LaTeX Setup</h2>
 
-<table class="form-table" width="500px">
-<tr><th scope="row"><h3>Instructions</h3></th></tr>
-<tr valign="top">
+<table class="form-table" style="width:500px">
+<tr><th scope="row" colspan="3"><b>Instructions</b></th></tr>
+<tr style="vertical-align:top">
 <td>
 <ul style="padding-left:10px;list-style-type:circle; list-style-position:inside;" >
 <li>
@@ -115,15 +115,15 @@ Bracket your LaTeX formula with the tags. Example, type in
 
 <table class="form-table">
 <tr><th scope="row" colspan="2">
-<h3>Options (for the <?php echo  $mThemeName; ?> theme)</h3>
+<b>Options (for the <?php echo  $mThemeName; ?> theme)</b>
 </th></tr>
-<tr valign="top">
+<tr style="vertical-align:top">
 
-<td width="35%">
+<td style="width:35%">
 <table class="form-table">
-<tr><th scope="row" colspan="2" title="Decide the text and background color for your equations to match your theme."><b>Colors</b></th></tr>
+<tr><th scope="row" colspan="3" title="Decide the text and background color for your equations to match your theme."><b>Colors</b></th></tr>
 <tr>
-<td width="10">&nbsp;</td>
+<td style="width:10px">&nbsp;</td>
 <td>
 Text Color:
 </td>
@@ -132,7 +132,7 @@ Text Color:
 </td>
 </tr>
 <tr>
-<td width="10">&nbsp;</td>
+<td style="width:10px">&nbsp;</td>
 <td>
 Background Color:
 </td>
@@ -146,7 +146,7 @@ Background Color:
 <table class="form-table">
 <tr><th scope="row"  colspan="2" title="Decide the tags to bracket your LaTeX code."><b>Bracketting Tags</b></th></tr>
 <tr>
-<td width="10">&nbsp;</td>
+<td style="width:10px">&nbsp;</td>
 <td>
 <label for="ezLaTeX_tag_math">
 <input type="radio" id="ezLaTeX_tag_math" name="ezLaTeX_tag" value="math" <?php if ($ezTeXOptions['tag'] == "math") { echo 'checked="checked"'; }?> /> &nbsp; [math] ... [/math]&nbsp; phpBB Style</label><br />
@@ -168,7 +168,7 @@ Background Color:
 <table class="form-table">
 <tr><th scope="row" colspan="2" title="Choose the font size for your equations."><b>LaTeX Equation Font Size</b></th></tr>
 <tr>
-<td width="15"></td>
+<td style="width:15px"></td>
 <td>
 <label for="ezLaTeX_size0">
 <input type="radio" id="ezLaTeX_size0" name="ezLaTeX_size" value="0" <?php if ($ezTeXOptions['size'] == "0") { echo 'checked="checked"'; }?> /> &nbsp;&nbsp; Small &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img style="vertical-align:-40%;" alt="latex" src="http://l.wordpress.com/latex.php<?php echo htmlspecialchars('?latex=(a%2bb)^2%20=%20a^2%20%2b%20b^2%20%2b%202ab&bg=' . $ezTeXOptions['bg_color'] . '&fg=' .$ezTeXOptions['text_color'] . '&s=0') ; ?>" /></label><br /><br />
@@ -215,7 +215,7 @@ Background Color:
 
 
 <table class="form-table" >
-<tr><th scope="row"><h3><?php _e('Credits', 'easy-adsenser'); ?></h3></th></tr>
+<tr><th scope="row"><b><?php _e('Credits', 'easy-adsenser'); ?></b></th></tr>
 <tr><td>
 <ul style="padding-left:10px;list-style-type:circle; list-style-position:inside;" >
 <li>
