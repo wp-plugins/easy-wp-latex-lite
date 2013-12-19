@@ -3,7 +3,7 @@
 Plugin Name: Easy WP LaTeX
 Plugin URI: http://www.thulasidas.com/plugins/easy-latex
 Description: Easiest way to show mathematical equations on your blog using LaTeX. Go to <a href="options-general.php?page=easy-wp-latex-lite.php">Settings &rarr; Easy WP LaTeX</a> to set it up, or use the "Settings" link on the right.
-Version: 3.30
+Version: 3.40
 Author: Manoj Thulasidas
 Author URI: http://www.thulasidas.com
 */
@@ -25,7 +25,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-if (!class_exists("ezLaTeX")) {
+if (class_exists("ezLaTeX")) {
+  die ("<strong><em>Easy WP LaTeX Pro</em></strong> seems to be active.<br />Please use the Pro version, or deactivate it before activating <strong><em>Easy WP LaTeX Lite</em></strong>.");
+}
+else {
   class ezLaTeX {
     function init() {
       $this->getAdminOptions();
@@ -86,11 +89,11 @@ if (!class_exists("ezLaTeX")) {
       echo '<script type="text/javascript" src="'. $plugindir . '/wz_tooltip.js"></script>' ;
 ?>
 
-<div class="wrap" style="width:800px">
+<div class="wrap" style="width:1000px">
 <h2>Easy WP LaTeX Setup</h2>
 
-<table class="form-table" style="width:500px">
-<tr><th scope="row" colspan="3"><b>Instructions</b></th></tr>
+<h3>Instructions</h3>
+<table style="width:100%">
 <tr style="vertical-align:top">
 <td>
 <ul style="padding-left:10px;list-style-type:circle; list-style-position:inside;" >
@@ -111,16 +114,14 @@ Bracket your LaTeX formula with the tags. Example, type in
 </tr>
 </table>
 
-<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
+<form method="post" action="#">
 
-<table class="form-table">
-<tr><th scope="row" colspan="2">
-<b>Options (for the <?php echo  $mThemeName; ?> theme)</b>
-</th></tr>
+<h3>Options (for the <?php echo  $mThemeName; ?> theme)</h3>
+<table>
 <tr style="vertical-align:top">
 
 <td style="width:35%">
-<table class="form-table">
+<table>
 <tr><th scope="row" colspan="3" title="Decide the text and background color for your equations to match your theme."><b>Colors</b></th></tr>
 <tr>
 <td style="width:10px">&nbsp;</td>
@@ -143,7 +144,7 @@ Background Color:
 </table>
 <br />
 
-<table class="form-table">
+<table>
 <tr><th scope="row"  colspan="2" title="Decide the tags to bracket your LaTeX code."><b>Bracketting Tags</b></th></tr>
 <tr>
 <td style="width:10px">&nbsp;</td>
@@ -165,7 +166,7 @@ Background Color:
 
 <td>
 
-<table class="form-table">
+<table>
 <tr><th scope="row" colspan="2" title="Choose the font size for your equations."><b>LaTeX Equation Font Size</b></th></tr>
 <tr>
 <td style="width:15px"></td>
@@ -191,31 +192,22 @@ Background Color:
 
 </td>
 </tr>
-<tr><td colspan=2>
-<table class="form-table">
-<tr>
-<td>
-<div style="background-color:#cff;padding:5px;border: solid 1px">
-<?php include (dirname (__FILE__).'/why-pro.php'); ?>
-</div>
-</td>
-</tr>
-</table>
-</td></tr>
 
 </table>
 
 <div class="submit">
 <input type="submit" name="update_ezLaTeXSettings" value="Save Changes" /></div>
 </form>
-<br />
 <hr />
+<br />
+<div style="background-color:#cff;padding:5px;border: solid 1px">
+<?php include (dirname (__FILE__).'/why-pro.php'); ?>
+</div>
 
 <?php @include (dirname (__FILE__).'/tail-text.php'); ?>
 
-
-<table class="form-table" >
-<tr><th scope="row"><b><?php _e('Credits', 'easy-adsenser'); ?></b></th></tr>
+<h3>Credits</h3>
+<table style="width:100%">
 <tr><td>
 <ul style="padding-left:10px;list-style-type:circle; list-style-position:inside;" >
 <li>
@@ -326,4 +318,3 @@ if (class_exists("ezLaTeX")) {
     add_filter('plugin_action_links', array($ez_TeX, 'plugin_action'), -10, 2);
   }
 }
-?>
