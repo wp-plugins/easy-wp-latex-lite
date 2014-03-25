@@ -4,7 +4,8 @@ Donate link: http://buy.thulasidas.com/easy-latex
 Tags: latex, tex, math, mathematics, equation, equations, formatting, formula, formulas
 Requires at least: 2.5
 Tested up to: 3.8
-Stable tag: 3.40
+Stable tag: 4.00
+License: GPL2 or later
 
 Easy WP LaTeX provides a very easy way to display math and equations in your posts using LaTeX. Lets you customize colors and sizes of your equations.
 
@@ -23,21 +24,15 @@ My plugin aims to be flexible, and easy to install (no geeky code editing etc.).
 
 = Pro Version =
 
-This release is the freely distributed version of *Easy WP LaTeX*. It is fully functional. But the **[Pro Version](http://buy.thulasidas.com/easy-latex/ "Pro version of the Easy WP LaTeX plugin for only $2.95")** gives you more features and benefits. For instance, it gives you an option to cache the formula images so that your pages load faster. New features and bug fixes will first appear in the Pro version before being ported to this freely distributed edition.
+This release is the freely distributed version of *Easy WP LaTeX*. It is fully functional. But the **[Pro Version](http://buy.thulasidas.com/easy-latex/ "Pro version of the Easy WP LaTeX plugin for only $2.95")** gives you more features and benefits. For instance, it gives you an option to cache the formula images so that your pages load faster. New features and bug fixes will first appear in the Pro version before being ported to this freely distributed edition. Also available in the Pro version is an option to align the formula image with respect to the text around it.
 
 = Alternatives =
 1. *Latex for WordPess* by zhiqiang, on which this plugin is based, has caching and JS based image generation. But it lacks intuitive color matching and theme-dependent settings.
 2. *JetPack* also lets you insert LaTeX formulas, again color matching is not easy.
 
-= New in this Release =
-
-Compatibility checks for WordPress V3.8. Admin page enhancements.
-
 == Upgrade Notice ==
 
-= 3.40 =
-
-Compatibility checks for WordPress V3.8. Admin page enhancements.
+Major changes to the design -- adding a translation interface, getting ready to change options handling.
 
 == Screenshots ==
 
@@ -64,6 +59,8 @@ Two possible reasons.
 
 = Past =
 
+* V4.00: Major changes to the design -- adding a translation interface, getting ready to change options handling. [Mar 24, 2014]
+* V3.41: Minor compatibility and documentation changes. [Dec 27, 2013]
 * V3.40: Compatibility checks for WordPress V3.8. Admin page enhancements. [Dec 19, 2013]
 * V3.30: Compatibility checks for WordPress V3.7. [Nov 11, 2013]
 * V3.20: Now available in your own language using machine translation curtsey of Google and Microsoft. [May 22, 2013]
