@@ -21,7 +21,7 @@ if (!class_exists("PO")) {
 
   class PO { // an id-str pair with attributes
 
-    var $num, $id, $str, $tranId, $tranVal, $keyId, $keyVal;
+    var $num, $id, $str, $tranId, $tranVal, $keyId, $keyVal, $tl = '', $domain;
 
     const MINMATCH = 89;
 
@@ -55,7 +55,7 @@ if (!class_exists("PO")) {
     }
 
     // Returns a text-area string of the Id
-    function textId() {
+    function getId() {
       $ht = round(strlen($this->id) / 52 + 1) * 25;
       $col = 'background-color:#f5f5f5;';
       $tit = '';
@@ -75,7 +75,7 @@ if (!class_exists("PO")) {
       return $s;
     }
 
-    function textStr() {
+    function getStr() {
       $ht = round(strlen($this->id) / 52 + 1) * 25;
       $col = '';
       $tit = '';
@@ -87,7 +87,7 @@ if (!class_exists("PO")) {
                 'Please check carefully.\',WIDTH, 300)" ' .
                 'onmouseout="UnTip()"';
       }
-      if (empty($this->str)) {
+      if (empty($this->str) && !empty($this->tl)) {
         $col = "background-color:#dff;border: solid 1px #0ff";
         $tit = 'onmouseover = "Tip(\'Using Machine Translation from Google.<br />Please check carefully.\',WIDTH, 300)" ' .
                 'onmouseout="UnTip()"';
@@ -101,14 +101,12 @@ if (!class_exists("PO")) {
       return $s;
     }
 
-    function googleTran() {
-      $q = urlencode($this->id);
-      $locale = get_locale();
-      $tl = substr($locale, 0, 2);
+    function googleTran1($q) {
+      $tl = $this->tl;
       $sl = "auto";
       if (!$q) {
         return;
-      } // avoid unneeded curling
+      }
       $url = 'http://translate.google.com/translate_a/t?client=a&q=' . $q . '&tl=' . $tl . '&sl=' . $sl;
       $ch = curl_init();
       curl_setopt($ch, CURLOPT_URL, $url);
@@ -118,17 +116,29 @@ if (!class_exists("PO")) {
       $output = curl_exec($ch);
       curl_close($ch);
       if ($output === false) {
-        return "No help from Google!";
+        return "No help (output) from Google!";
       }
       $jsonarr = json_decode($output);
       if (!$jsonarr) {
-        return "No help from Google!";
+        return "No help (json) from Google!";
       }
-      if (!isset($jsonarr->results)) {
-        $jsonarr2->results[] = $jsonarr;
-        $jsonarr = $jsonarr2;
+      if (isset($jsonarr->results)) {
+        $ret = $jsonarr->results[0]->sentences[0]->trans;
       }
-      return $jsonarr->results[0]->sentences[0]->trans;
+      else {
+        $ret = $jsonarr->sentences[0]->trans;
+      }
+      return $ret;
+    }
+
+    function googleTran() {
+      $sentences = preg_split('/(?<=[.?!;:])\s+/', $this->id, -1, PREG_SPLIT_NO_EMPTY);
+      $ret = '';
+      foreach ($sentences as $s) {
+        $q = urlencode($s);
+        $ret .= ' ' . $this->googleTran1($q);
+      }
+      return trim($ret);
     }
 
   }
@@ -139,26 +149,36 @@ if (!class_exists("EzTran")) {
 
   class EzTran {
 
-    var $status, $error, $plgName, $plgDir, $plgURL, $domain, $locale, $state;
+    // locale is the blog-locale or the language explicity loaded
+    // target is the language target for the translation. defaults to locale.
+
+    var $status, $error, $plgName, $plgDir, $plgURL, $domain, $locale, $state,
+            $isEmbedded = true, $isPro = false, $target, $POs;
     var $adminMsg;
-    var $helpers;
+    var $helpers = array();
+    var $sessionVars = array('POs', 'ezt-locale', 'ezt-target');
 
     function __construct($plgFile, $plgName, $domain = '') {
-      $this->helpers = array('easy-adsense');
       if (!empty($_POST['ezt-savePot'])) {
         // saving cannot be done from handleSubmits
         // because it would be too late for the headers.
-        $file = $_POST['potFile'];
-        $str = $_POST['potStr'];
+        $target = $_POST['ezt-target'];
+        $file = "{$target}.po";
+        $potArray = unserialize(gzinflate(base64_decode($_POST['potArray'])));
         header('Content-Description: File Transfer');
         header('Content-Disposition: attachment; filename="' . $file . '"');
         header("Content-Transfer-Encoding: ascii");
         header('Expires: 0');
         header('Pragma: no-cache');
         ob_start();
-        print htmlspecialchars_decode($str, ENT_QUOTES);
+        foreach ($potArray as $domain => $str) {
+          $filePO = "{$target}_$domain.po";
+          echo "\n# Begin $filePO\n";
+          print htmlspecialchars_decode($str, ENT_QUOTES);
+          echo "# End $filePO\n\n";
+        }
         ob_end_flush();
-        $this->status = '<div class="updated">Pot file: ' . $file . ' was saved.</div> ';
+        $this->status .= '<div class="updated">Pot file: ' . $file . ' was saved.</div> ';
         exit(0);
       }
       $this->status = '';
@@ -177,28 +197,30 @@ if (!class_exists("EzTran")) {
       $this->plgURL = plugin_dir_url($plgFile);
       $locale = get_locale();
       $this->locale = str_replace('-', '_', $locale);
+      $this->target = $this->locale;
       if (!session_id()) {
         session_start();
-      }
-      if (empty($_SESSION[$this->domain])) {
-        $_SESSION[$this->domain] = array();
       }
     }
 
     function EzTran($plgFile, $plgName = '', $domain = '') {
       if (version_compare(PHP_VERSION, "5.0.0", "<")) {
-        $this->__construct($plgName, $domain);
+        $this->__construct($plgFile, $plgName, $domain);
         register_shutdown_function(array($this, "__destruct"));
       }
     }
 
     // Return the contents of all PHP files in the dir specified
-    function getFileContents() {
-      $files = glob($this->plgDir . '/*.php');
+    function getFileContents($dir = '') {
+      if (empty($dir)) {
+        $dir = $this->plgDir;
+      }
+      $files = glob("$dir/*.php");
       $page = "";
       foreach ($files as $f) {
         $page .= file_get_contents($f, FILE_IGNORE_NEW_LINES);
       }
+      // $page = str_replace(array_values($this->helpers), $this->domain, $page);
       return $page;
     }
 
@@ -210,7 +232,7 @@ if (!class_exists("EzTran")) {
 
     // Get the closest existing translation keys, and the recursivley closest in the
     // key set
-    function getClose(&$mo, &$POs) {
+    function getClosest(&$mo, &$POs) {
       foreach ($POs as $n => $po) {
         $s1 = $po->id;
         if (strlen($po->str) == 0) {
@@ -241,13 +263,38 @@ if (!class_exists("EzTran")) {
       }
     }
 
-    // Get the strings that look like translation keys
-    function getTranPOs(&$contents, &$mo, $domain, &$POs) {
+    // Get translatable strings (keys) and text-domains from content
+    static function getStrings($contents, &$keys, &$domains) {
       $matches = array();
-      preg_match_all("#_[_e].*\([\'\"](.+?)[\'\"]\s*,\s*[\'\"]" . $domain . "[\'\"]#", $contents, $matches);
+      $regExp = "#_[_e]\s*\([\'\"](.*)[\'\"]\s*(,\s*[\'\"](.+)[\'\"]|)\s*\)#U";
+      // $regExp = "#_[_e]\s*\(\'([^\'\"]*\'|\"[^\'\"])\"s*(,\s*[\'\"](.+)[\'\"]|)\s*\)#U";
+      preg_match_all($regExp, $contents, $matches);
       $keys = array_unique($matches[1]);
+      $domains = $matches[3];
+      foreach ($domains as $k => $d) {
+        if (strtr($d, '",\'', '   ') != $d) {
+          unset($domains[$k]);
+          unset($keys[$k]);
+        }
+      }
       $keys = str_replace(array("\'", '\"', '\n'), array("'", '"', "\n"), $keys);
+    }
+
+    // Get the strings that look like translation keys
+    function getTranPOs(&$contents) {
+      $keys = $domains = array();
+      self::getStrings($contents, $keys, $domains);
+      $tl = substr($this->target, 0, 2);
+      global $l10n;
+      $POs = array();
       foreach ($keys as $n => $k) {
+        if (!$this->isEmbedded && $domains[$n] != $this->domain) {
+          // consider only the specified domain
+          continue;
+        }
+        if (!empty($l10n[$domains[$n]])) {
+          $mo = $l10n[$domains[$n]]->entries;
+        }
         if (!empty($mo[$k])) {
           $v = $mo[$k];
           $t = $v->translations[0];
@@ -257,22 +304,27 @@ if (!class_exists("EzTran")) {
         }
         $po = new PO($k, $t);
         $po->num = $n;
+        if ($this->isEmbedded || $this->isPro) {
+          $po->tl = $tl;
+        }
+        $po->domain = $domains[$n];
         array_push($POs, $po);
       }
-      $this->getClose($mo, $POs);
+      $this->getClosest($mo, $POs);
+      return $POs;
     }
 
     // Make a POT string from ids and msgs
-    function mkPot(&$POs, $msg) {
+    function mkPotStr(&$POs, $msg) {
       $time = current_time('mysql');
-      $pot = <<<EOF
+      $potHead = <<<EOF
 # This file was generated by EzTran for {$this->plgName}
 # Your Name: {$msg["name"]}
 # Your Email: {$msg["email"]}
 # Your Website: {$msg["blog"]}
 # Your URL: {$msg["url"]}
 # Your Locale: {$msg["locale"]}
-# Your Language: {$msg["lang"]}
+# Your Language: {$msg["ezt-target"]}
 #, fuzzy
 msgid ""
 msgstr ""
@@ -285,10 +337,14 @@ msgstr ""
 
 
 EOF;
+      $pot = array();
       foreach ($POs as $po) {
-        $pot .= "msgid " . '"' . PO::decorate($po->id, "\n\r\"") . '"' . "\n";
+        if (empty($pot[$po->domain])) {
+          $pot[$po->domain] = $potHead;
+        }
+        $pot[$po->domain] .= "msgid " . '"' . PO::decorate($po->id, "\n\r\"") . '"' . "\n";
         $t = $msg[$po->num];
-        $pot .= "msgstr " . '"' . PO::decorate($t, "\n\r") . '"' . "\n\n";
+        $pot[$po->domain] .= "msgstr " . '"' . PO::decorate($t, "\n\r") . '"' . "\n\n";
       }
       return $pot;
     }
@@ -301,17 +357,61 @@ EOF;
       }
     }
 
-    // Error messages
-    function errMsg($s, $class = "error", $close = true) {
-      $e = '';
-      if ($class == "error") {
-        $e = "<b>Error: </b>";
+    function putSessionVars($var = array()) {
+      if (empty($var)) {
+        $var = $this->sessionVars;
       }
-      $s = '<div class="' . $class . '"><p>' . $e . $s . '</p></div>';
-      if ($close) {
-        $s .= "\n</div>\n";
+      if (!is_array($var)) {
+        $var = array($var);
       }
-      return $s;
+      if (empty($_SESSION[$this->domain])) {
+        $_SESSION[$this->domain] = array();
+      }
+      foreach ($var as $v) {
+        $prop = str_replace("ezt-", "", $v);
+        if (isset($this->$prop)) {
+          $_SESSION[$this->domain][$v] = $this->$prop;
+        }
+      }
+    }
+
+    function getSessionVars($var = array()) {
+      if (empty($var)) {
+        $var = $this->sessionVars;
+      }
+      if (!is_array($var)) {
+        $var = array($var);
+      }
+      foreach ($var as $v) {
+        $prop = str_replace("ezt-", "", $v);
+        if (isset($_SESSION[$this->domain][$v])) {
+          $this->$prop = $_SESSION[$this->domain][$v];
+        }
+      }
+    }
+
+    function rmSessionVars($var = array()) {
+      if (empty($var)) {
+        $var = $this->sessionVars;
+      }
+      if (!is_array($var)) {
+        $var = array($var);
+      }
+      foreach ($var as $v) {
+        unset($_SESSION[$this->domain][$v]);
+        $prop = str_replace("ezt-", "", $v);
+        $this->$prop = '';
+      }
+    }
+
+    function isCached() {
+      $cached = !empty($_SESSION[$this->domain]);
+      if ($cached) {
+        foreach ($this->sessionVars as $v) {
+          $cached = $cached && !empty($_SESSION[$this->domain][$v]);
+        }
+      }
+      return $cached;
     }
 
     function handleSubmits() {
@@ -329,6 +429,14 @@ EOF;
       $adminNeeded = true;
       if (isset($_POST['ezt-translate'])) {
         $_POST['eztran'] = 'eztran';
+        if (isset($_POST['ezt-createpo'])) {
+          $this->getSessionVars();
+          if ($this->target != $_POST['ezt-createpo']) {
+            $this->rmSessionVars();
+            $this->target = $_POST['ezt-createpo'];
+            $this->setLang($this->target);
+          }
+        }
         return $adminNeeded;
       }
       if (!isset($_POST['eztran'])) {
@@ -339,36 +447,54 @@ EOF;
       }
       if (isset($_POST['ezt-clear'])) {
         $this->status = '<div class="updated">Reloaded the translations from PHP files and MO.</div> ';
-        unset($_SESSION[$this->domain]['ezt-POs']);
+        $_SESSION[$this->domain] = array();
+        $this->target = $_POST['ezt-target'];
+        $this->setLang($this->target);
         return $adminNeeded;
       }
       if (!empty($_POST['ezt-mailPot'])) {
-        $file = $_POST['potFile'];
-        $str = stripslashes($_POST['potStr']);
-        $str = str_replace("\'", "'", $str);
+        if ($this->isEmbedded || $this->isPro) {
+          $locale = $_POST['locale'];
+          $file = "{$locale}.po";
+          $potArray = unserialize(gzinflate(base64_decode($_POST['potArray'])));
 
-        if (!class_exists("phpmailer")) {
-          require_once(ABSPATH . 'wp-includes/class-phpmailer.php');
-        }
-        $mail = new PHPMailer();
-        $mail->From = get_bloginfo('admin_email');
-        $mail->FromName = get_bloginfo('name');
-        $mail->AddAddress('Manoj@Thulasidas.com', "Manoj Thulasidas");
-        $mail->CharSet = get_bloginfo('charset');
-        $mail->Mailer = 'php';
-        $mail->SMTPAuth = false;
-        $mail->Subject = $file;
-        $mail->AddStringAttachment($str, $file);
-        $pos1 = strpos($str, "msgstr");
-        $pos2 = strpos($str, "msgid", $pos1);
-        $head = substr($str, 0, $pos2);
-        $mail->Body = $head;
-        if ($mail->Send()) {
-          $this->status = '<div class="updated">Pot file: ' . $file . ' was sent.</div> ';
+          if (!class_exists("phpmailer")) {
+            require_once(ABSPATH . 'wp-includes/class-phpmailer.php');
+          }
+          $mail = new PHPMailer();
+          $mail->From = get_bloginfo('admin_email');
+          $mail->FromName = get_bloginfo('name');
+          if ($this->isEmbedded) {
+            $author = "Manoj Thulasidas";
+            $authormail = 'Manoj@Thulasidas.com';
+          }
+          else {
+            $author = $_POST['ezt-author'];
+            $authormail = $_POST['ezt-authormail'];
+          }
+          $mail->AddAddress($authormail, $author);
+          $mail->CharSet = get_bloginfo('charset');
+          $mail->Mailer = 'php';
+          $mail->SMTPAuth = false;
+          $mail->Subject = $file;
+          foreach ($potArray as $domain => $str) {
+            $filePO = "{$locale}_$domain.po";
+            $mail->AddStringAttachment($str, $filePO);
+          }
+
+          $pos1 = strpos($str, "msgstr");
+          $pos2 = strpos($str, "msgid", $pos1);
+          $head = substr($str, 0, $pos2);
+          $mail->Body = $head;
+          if ($mail->Send()) {
+            $this->status = "<div class='updated'>Pot file:  $file was sent.</div>";
+          }
+          else {
+            $this->error = "<div class='error'>Error: {$mail->ErrorInfo} Please save the pot file and <a href='mailto:$authormail'>contact $author</a></div>";
+          }
         }
         else {
-          $this->error = '<div class="error">Error: ' . $mail->ErrorInfo .
-                  ' Please save the pot file and <a href="mailto:Manoj@Thulasidas.com">contact the author</a></div>';
+          $this->status = '<div style="background-color:#cff;padding:5px;margin:5px;border:solid 1px;margin-top:10px;font-weight:bold;color:red">In the <a href="http://buy.thulasidas.com/easy-translator">Pro Version</a>, the Pot file would have been sent to the plugin author.<br />In this Lite version, please download the PO file (using the "Display &amp; Save POT File" button above) and email it using your mail client.</div><br />';
         }
         return $adminNeeded;
       }
@@ -377,6 +503,11 @@ EOF;
 
     // Prints out the admin page
     function printAdminPage() {
+      echo '<script type="text/javascript">window.onload = function() {jQuery("#loading").fadeOut("slow");};</script>';
+      echo "<div id='loading'><p><img src='{$this->plgURL}/loading.gif' alt='loading'/> Please Wait. Loading...</p></div>";
+      if ($this->isEmbedded) {
+        $this->helpers = array('' => 'easy-common', 'easy-adsense' => 'easy-common');
+      }
       $printed = false;
       if (!$this->handleSubmits()) {
         return $printed;
@@ -388,38 +519,53 @@ EOF;
         return $printed;
       }
       $printed = true;
-      $backButton = "<br /><b>If you are done with translating, <input type='button' value='Go Back to {$this->plgName} Admin' onClick='location.reload(true)'><br />You can continue later, and your translation for the session will be remembered until you close the browser window.</b>";
+      if ($this->isEmbedded) {
+        $backButtonVal = "Go Back to {$this->plgName} Admin";
+      }
+      else {
+        $backButtonVal = "Go Back to Easy Translator";
+      }
+      $backButton = "<br /><b>If you are done with translating, <input type='button' value='$backButtonVal' onClick='location.reload(true)'><br />You can continue later, and your translation for the session will be remembered until you close the browser window.</b>";
       echo '<div class="wrap" style="width:1000px">';
       echo '<form method="post" action="#">';
       wp_nonce_field('ezTranSubmit', 'ezTranNonce');
       echo "<input type='hidden' name='eztran' value='eztran'>";
-      $locale = get_locale();
-      $made = isset($_POST['ezt-make']);
+      $locale = $this->locale;
       echo "\n<script type='text/javascript' src='{$this->plgURL}/wz_tooltip.js'></script>\n";
-      echo "<h2>Translation Interface for {$this->plgName}</h2>";
-      $domain = $this->domain;
+      if ($this->isEmbedded) {
+        echo "<h2>Translation Interface for {$this->plgName}</h2>";
+      }
+      else {
+        echo "<h2>Translating {$this->plgName} using Easy Translator</h2>";
+      }
 
-      if (isset($_SESSION[$this->domain]['ezt-POs'])) {
+      if ($this->isCached()) {
         if (empty($this->status)) {
           $this->status = '<div class="updated">Continuing from your last translation session. Click on "Reload Translation" if you would like to start from scratch.</div> ';
         }
-        $POs = $_SESSION[$this->domain]['ezt-POs'];
+        $this->getSessionVars();
+        $POs = $this->POs;
       }
       else {
-        global $l10n;
-        $mo = array($l10n[$domain]->entries);
         $s = $this->getFileContents();
-        $POs = array();
-        $this->getTranPOs($s, $mo[0], $domain, $POs);
+        $POs = $this->getTranPOs($s);
+
         // cache the POs
-        $_SESSION[$this->domain]['ezt-POs'] = $POs;
+        $this->POs = $POs;
+        $this->putSessionVars();
       }
 
-      if ($made) {
-        $pot = htmlspecialchars($this->mkPot($POs, $_POST), ENT_QUOTES);
+      if (isset($_POST['ezt-make'])) {
+        $potArray = $this->mkPotStr($POs, $_POST);
+        $pot = '';
+        foreach ($potArray as $p) {
+          $pot .= htmlspecialchars($p, ENT_QUOTES);
+        }
         $this->updatePot($POs, $_POST);
-        // cache the updated POs
-        $_SESSION[$this->domain]['ezt-POs'] = $POs;
+
+        // cache the POs
+        $this->POs = $POs;
+        $this->putSessionVars();
       }
       else {
         global $current_user;
@@ -441,10 +587,12 @@ EOF;
                   get_bloginfo('url') . '" />' . "\n<br />";
           $pot .= '<div style="width: 15%; float:left">Your Locale:</div>' .
                   '<input type="text" style="width: 30%" name="locale" value="' .
-                  $locale . '" /><br />' . "\n";
+                  $locale . '" readonly /><br />' . "\n";
+          $tip = "Enter the language code for your translation (used for machine translation seed by Google). It should be of the form <code>fr_FR</code>, for instance. The first two letters are for the language (and needed for Google translation), the last two are for the country, and not used by this translator.";
           $pot .= '<div style="width: 15%; float:left">Your Language:</div>' .
-                  '<input type="text" style="width: 30%" name="lang" value="' .
-                  get_bloginfo('language') . '" /><br />' . "\n";
+                  '<input type="text" style="width: 30%" name="ezt-target" value="' .
+                  $this->target . '" onmouseover = "Tip(\'' . $tip . '\',WIDTH, 300)"'
+                  . ' onmouseout="UnTip()" /><br />' . "\n";
           $pot .= '<div style="width: 15%; float:left">Character Set:</div>' .
                   '<input type="text" style="width: 30%" name="charset" value="' .
                   get_bloginfo('charset') . '" />' . "\n<br /><br />";
@@ -463,28 +611,34 @@ EOF;
             if (!is_object($po) && gettype($po) == 'object') {
               $po = unserialize(serialize($po));
             } // need this only on Chrome!!
-            $pot .= $po->textId() . "\n" . $po->textStr() . "\n\n";
+            $pot .= $po->getId() . "\n" . $po->getStr() . "\n\n";
           }
         }
         else {
           $pot .= "<div class='error'>No translatable strings found for the plugin {$this->plgName}. Although the translation interface is ready, the plugin author has not yet internationalized this plugin.</div>";
         }
       }
+      $tip = "This plugin caches your inputs so that you restart from where you left off. If you would like to discard the cache and start from scratch, please click this button.";
       $makeStr = '<div class="submit">
 <input type="submit" name="ezt-make" value="Display &amp; Save POT File" title="Make a POT file with the translation strings below and display it" />&nbsp;
-<input type="submit" name="ezt-clear" value="Reload Translation" title="Discard your changes and reload the translation" onclick="return confirm(\'Are you sure you want to discard your changes?\nThe page will take a few minutes to reload because we will be querying Google for translations for each translatable string in the plugin files.\nPlease be patient.\');" />&nbsp;
+<input type="submit" name="ezt-clear" value="Reload Translation" title="Discard your changes and reload the translation" onmouseover = "Tip(\'' . $tip . '\',WIDTH, 300)" onmouseout="UnTip()" onclick="return confirm(\'Are you sure you want to discard your changes?\nThe page will take a few minutes to reload because we will be querying Google for translations for each translatable string in the plugin files.\nPlease be patient.\');" />&nbsp;
 </div>' . $this->status . $this->error;
       $saveStr = '<div class="submit">
 <input type="submit" name="ezt-savePot" value="Save POT file" title="Saves the strings shown below to your PC as a POT file" />&nbsp;
 <input type="submit" name="ezt-mailPot" value="Mail POT file" title="Email the translation to the plugin autor" onClick="return confirm(\'Are you sure you want to email the author?\');" />&nbsp;
 <input type="submit" name="ezt-editMore" value="Edit More" title="If you are not happy with the strings, edit it further"/>
 </div>' . $this->status . $this->error;
-      if ($made) {
+      if (isset($_POST['ezt-make'])) {
         echo "<div style='background-color:#eef;border: solid 1px #005;padding:5px'>If you are happy with the POT file as below, please save it or email it to the author. If not, edit it further. $backButton</div>";
-        $this->status = '<div class="updated">Ready to email to POT file to the author. Click on "Mail POT file" to send it.</div> ';
-        echo '<input type="hidden" name="potFile" value="' .
-        $domain . "-" . $locale . '.po" />';
-        echo '<input type="hidden" name="potStr" value="' . $pot . '" />';
+        $this->status = '<div class="updated">Ready to email the POT file to the author. Click on "Mail POT file" to send it.</div> ';
+        $b64 = base64_encode(gzdeflate(serialize($potArray)));
+        echo '<input type="hidden" name="potArray" value="' . $b64 . '" />';
+        echo '<input type="hidden" name="locale" value="' . $this->locale . '" />';
+        if (!$this->isEmbedded) {
+          $mail = "<br /><span style='width:15%;float:left;'>Plugin Author:</span><input type='text' style='width: 30%' name='ezt-author' value='' /><br />\n";
+          $mail .= "<span style='width:15%;float:left'>Author's Email:</span><input type='text' style='width: 30%' name='ezt-authormail' value='' />\n<br />";
+          echo $mail;
+        }
         echo $saveStr;
         echo "\n" . '<pre>' . $pot . '</pre>';
       }
@@ -507,15 +661,102 @@ EOF1;
 
     function getInvite() {
       $locale = $this->locale;
-      $lo = substr($locale, 0, 2);
-      if ($lo == 'en') {
-        return "";
-      }
       $plgName = $this->plgName;
       $patience = "I will include your translation in the next release.<br /><br /><span style=\"color:red;font-weight:bold\">Please note that the page may take a while to load because the plugin will query Google Translator for each string. Please be patient!</span>";
       if ($this->state == "Not Translated") {
         $tip = htmlentities("It is easy to have <b>$plgName</b> in your language. All you have to do is to translate some strings, and email the file to the author.<br /><br />If you would like to help, please use the translation interface. It picks up the translatable strings in <b>$plgName</b> and presents them (and their existing translations in <b>$locale</b>, if any) in an easy-to-edit form. You can then generate a translation file and email it to the author all from the same form. $patience");
         $invite = "<span style='color:red'> Would you like to see <b>$plgName</b> in your langugage (<b>$locale</b>)?&nbsp; <input type='submit' name='ezt-translate' onmouseover=\"Tip('$tip', WIDTH, 350, TITLE, 'How to Translate?', STICKY, 1, CLOSEBTN, true, CLICKCLOSE, true, FIX, [this, 0, 5])\" onmouseout=\"UnTip()\" value ='Please help translate ' /></span>";
+      }
+      else if ($this->state == "English") {
+        $tip = htmlentities("If you would like to translate this plugin into a language you know or speak, please use the translation interface. It picks up the translatable strings in <b>$plgName</b> and presents them and their existing translations in your chosen language in an easy-to-edit form. You can then generate a translation file and email it to the author all from the same form. $patience");
+        $langs = array('af_AF' => 'Afrikaans',
+            'sq_SQ' => 'Albanian',
+            'ar_AR' => 'Arabic',
+            'hy_HY' => 'Armenian',
+            'az_AZ' => 'Azerbaijani',
+            'eu_EU' => 'Basque',
+            'be_BE' => 'Belarusian',
+            'bn_BN' => 'Bengali',
+            'bs_BS' => 'Bosnian',
+            'bg_BG' => 'Bulgarian',
+            'ca_CA' => 'Catalan',
+            'zh-CN' => 'Chinese',
+            'hr_HR' => 'Croatian',
+            'cs_CS' => 'Czech',
+            'da_DA' => 'Danish',
+            'nl_NL' => 'Dutch',
+            'eo_EO' => 'Esperanto',
+            'et_ET' => 'Estonian',
+            'tl_TL' => 'Filipino',
+            'fi_FI' => 'Finnish',
+            'fr_FR' => 'French',
+            'gl_GL' => 'Galician',
+            'ka_KA' => 'Georgian',
+            'de_DE' => 'German',
+            'el_EL' => 'Greek',
+            'gu_GU' => 'Gujarati',
+            'ht_HT' => 'Haitian Creole',
+            'ha_HA' => 'Hausa',
+            'iw_IW' => 'Hebrew',
+            'hi_HI' => 'Hindi',
+            'hu_HU' => 'Hungarian',
+            'is_IS' => 'Icelandic',
+            'ig_IG' => 'Igbo',
+            'id_ID' => 'Indonesian',
+            'ga_GA' => 'Irish',
+            'it_IT' => 'Italian',
+            'ja_JA' => 'Japanese',
+            'jw_JW' => 'Javanese',
+            'kn_KN' => 'Kannada',
+            'km_KM' => 'Khmer',
+            'ko_KO' => 'Korean',
+            'lo_LO' => 'Lao',
+            'la_LA' => 'Latin',
+            'lv_LV' => 'Latvian',
+            'lt_LT' => 'Lithuanian',
+            'mk_MK' => 'Macedonian',
+            'ms_MS' => 'Malay',
+            'mt_MT' => 'Maltese',
+            'mi_MI' => 'Maori',
+            'mr_MR' => 'Marathi',
+            'mn_MN' => 'Mongolian',
+            'ne_NE' => 'Nepali',
+            'no_NO' => 'Norwegian',
+            'fa_FA' => 'Persian',
+            'pl_PL' => 'Polish',
+            'pt_PT' => 'Portuguese',
+            'pa_PA' => 'Punjabi',
+            'ro_RO' => 'Romanian',
+            'ru_RU' => 'Russian',
+            'sr_SR' => 'Serbian',
+            'sk_SK' => 'Slovak',
+            'sl_SL' => 'Slovenian',
+            'so_SO' => 'Somali',
+            'es_ES' => 'Spanish',
+            'sw_SW' => 'Swahili',
+            'sv_SV' => 'Swedish',
+            'ta_TA' => 'Tamil',
+            'te_TE' => 'Telugu',
+            'th_TH' => 'Thai',
+            'tr_TR' => 'Turkish',
+            'uk_UK' => 'Ukrainian',
+            'ur_UR' => 'Urdu',
+            'vi_VI' => 'Vietnamese',
+            'cy_CY' => 'Welsh',
+            'yi_YI' => 'Yiddish',
+            'yo_YO' => 'Yoruba',
+            'zu_ZU' => 'Zulu');
+        $langOptions = '';
+        foreach ($langs as $k => $v) {
+          if ($this->target == $k) {
+            $selected = "selected='selected'";
+          }
+          else {
+            $selected = '';
+          }
+          $langOptions .= "<option value='$k' $selected>$v</option>\n";
+        }
+        $invite = "If you speak another language, please help translate this plugin. Select a language: <select name='ezt-createpo'>$langOptions</select>&nbsp; <input type='submit' name='ezt-translate' onmouseover=\"Tip('$tip', WIDTH, 350, TITLE, 'How to Translate?', STICKY, 1, CLOSEBTN, true, CLICKCLOSE, true, FIX, [this, 0, 5])\" onmouseout=\"UnTip()\" value ='Please help translate ' />";
       }
       else {
         $tip = htmlentities("If you would like to improve this translation, please use the translation interface. It picks up the translatable strings in <b>$plgName</b> and presents them and their existing translations in <b>$locale</b> in an easy-to-edit form. You can then generate a translation file and email it to the author all from the same form. Slick, isn\'t it? $patience");
@@ -524,71 +765,95 @@ EOF1;
       return $invite;
     }
 
-    function loadTran($helper = '') {
+    function loadTran($target = '', $helper = '', $domain = '') {
       $locale = '';
+      if (empty($target)) {
+        $target = $this->target;
+      }
+      if (empty($target)) {
+        $target = $this->locale;
+      }
       if (empty($helper)) {
         $moDir = "{$this->plgDir}/lang";
       }
       else {
         $moDir = "{$this->plgDir}/../$helper/lang";
       }
-      $moFile = "$moDir/{$this->locale}.mo";
-      $lo = substr($this->locale, 0, 2);
+      if (empty($domain)) {
+        $domain = $this->domain;
+        $moFile = "$moDir/{$target}.mo";
+      }
+      else {
+        $moFile = "$moDir/{$target}_{$domain}.mo";
+      }
+      $foundMO = false;
       if (file_exists($moFile) && is_readable($moFile)) {
-        load_textdomain($this->domain, $moFile);
-        $locale = basename(dirname($moFile));
+        $foundMO = true;
       }
       else {
         // look for any other similar locale with the same first two characters
-        $moFiles = glob("$moDir/$lo*.mo");
+        $lo = substr($target, 0, 2);
+        $pattern = str_replace($target, "$lo*", $moFile);
+        $moFiles = glob($pattern);
         if (!empty($moFiles)) {
           $moFile = $moFiles[0];
-          load_textdomain($this->domain, $moFile);
-          $locale = basename(dirname($moFile));
+          $foundMO = true;
+        }
+      }
+      if ($foundMO) {
+        load_textdomain($domain, $moFile);
+        if ($this->isEmbedded) {
+          $locale = substr(basename($moFile), 0, 5);
         }
       }
       return $locale;
     }
 
-    function setLang() {
-      $locale = $this->locale;
-      $lo = substr($locale, 0, 2);
+    function setLang($target = '') {
+      if (empty($target)) {
+        $target = $this->target;
+      }
+      $this->helpers = array('' => 'easy-common', 'easy-adsense' => 'easy-common');
+      $lo = substr($target, 0, 2);
       if ($lo != 'en') {
-        $locale = $this->loadTran();
+        $locale = $this->loadTran($target);
         // Append translations in the helpers
-        foreach ($this->helpers as $helper) {
-          $this->loadTran($helper);
+        foreach ($this->helpers as $helper => $domain) {
+          $this->loadTran($target, $helper, $domain);
+        }
+        if (empty($locale)) {
+          $this->state = "Not Translated";
+        }
+        else if ($locale == $this->locale) {
+          $this->state = "Translated";
+        }
+        else {
+          $this->state = "Alternate MO";
+          $this->locale = $locale;
         }
       }
-      if (empty($locale)) {
-        $this->state = "Not Translated";
-      }
-      else if ($locale == $this->locale) {
-        $this->state = "Translated";
-      }
       else {
-        $this->state = "Alternate MO";
+        // TODO: Ask English speakers to help translate to their second lang
+        $this->state = "English";
       }
-      return $locale;
     }
 
     function renderTranslator() {
-      if (strncmp($this->locale, "en", 2) == 0) {
-        return;
-      }
+      $this->getSessionVars();
       echo "<br />\n";
       echo "<br />\n";
       echo '<div style="background-color:#ddd;padding:5px;border: solid 1px;margin:5px;">';
       echo $this->getInvite();
-      if ($this->state != "Not Translated") {
+      if ($this->state != "Not Translated" && $this->state != "English") {
         echo "<input type='image' title='Switch to English temporarily' onmouseover = 'Tip(\"If you want to temporarily switch to English, please click here.\",WIDTH, 200)' onmouseout='UnTip()' src='{$this->plgURL}/english.gif' style='float:right;padding:0' name='ezt-english' value='english'>";
         echo '</div>';
         echo $this->adminMsg;
         return;
       }
-      echo "<br />";
-      $plgName = strtr(' ', '-', str_replace(' pro', '', strtolower($this->plgName)));
-      echo "<script type='text/javascript'>
+      else if ($this->state != "English") {
+        echo "<br />";
+        $plgName = strtr(' ', '-', str_replace(' pro', '', strtolower($this->plgName)));
+        echo "<script type='text/javascript'>
 <!--
 function hideTranslator(id, btn, translator) {
   var e = document.getElementById(id);
@@ -615,34 +880,38 @@ function toggleVisibility(id, btn, translator) {
 }
 //-->
 </script>";
-      $ms = true;
-      $google = true;
-      if ($ms) {
-        $msBtn = " <button type='button' id='btnMS' onclick=\"toggleVisibility('MicrosoftTranslatorWidget', 'btnMS', 'Microsoft');\">Show Microsoft</button>";
-        $msLink = "<a target=_blank href='http://www.bing.com/translator'>Microsoft<sup>&reg;</sup></a> ";
-        $msJS = "<div id='MicrosoftTranslatorWidget' style='margin-left:auto;margin-right:auto;display:none; width: 200px; min-height: 83px; border-color: #404040; background-color: #A0A0A0;'><noscript><a href='http://www.microsofttranslator.com/bv.aspx?a=http%3a%2f%2fwww.thulasidas.com%2fplugins%2f$plgName'>Translate this page</a><br />Powered by <a href='http://www.bing.com/translator'>Microsoft® Translator</a></noscript></div> <script type='text/javascript'> /* <![CDATA[ */ setTimeout(function() { var s = document.createElement('script'); s.type = 'text/javascript'; s.charset = 'UTF-8'; s.src = ((location && location.href && location.href.indexOf('https') == 0) ? 'https://ssl.microsofttranslator.com' : 'http://www.microsofttranslator.com' ) + '/ajax/v2/widget.aspx?mode=manual&from=en&layout=ts'; var p = document.getElementsByTagName('head')[0] || document.documentElement; p.insertBefore(s, p.firstChild); }, 0); /* ]]> */ </script>";
-      }
-      else {
-        $msBtn = $msJs = $msLink = '';
-      }
-      if ($google) {
-        $ggBtn = " <button type='button' id='btnGG' onclick=\"toggleVisibility('GoogleTranslatorWidget', 'btnGG', 'Google');\">Show Google</button>";
-        $ggLink = "<a target=_blank href='https://translate.google.com/'>Google<sup>&reg;</sup></a>";
-        $ggJS = "<div id='GoogleTranslatorWidget' style='text-align:center;display:none;'><div id='google_translate_element'></div><script type='text/javascript'>
+        $ms = true;
+        $google = true;
+        if ($ms) {
+          $msBtn = " <button type='button' id='btnMS' onclick=\"toggleVisibility('MicrosoftTranslatorWidget', 'btnMS', 'Microsoft');\">Show Microsoft</button>";
+          $msLink = "<a target=_blank href='http://www.bing.com/translator'>Microsoft<sup>&reg;</sup></a> ";
+          $msJS = "<div id='MicrosoftTranslatorWidget' style='margin-left:auto;margin-right:auto;display:none; width: 200px; min-height: 83px; border-color: #404040; background-color: #A0A0A0;'><noscript><a href='http://www.microsofttranslator.com/bv.aspx?a=http%3a%2f%2fwww.thulasidas.com%2fplugins%2f$plgName'>Translate this page</a><br />Powered by <a href='http://www.bing.com/translator'>Microsoft® Translator</a></noscript></div> <script type='text/javascript'> /* <![CDATA[ */ setTimeout(function() { var s = document.createElement('script'); s.type = 'text/javascript'; s.charset = 'UTF-8'; s.src = ((location && location.href && location.href.indexOf('https') == 0) ? 'https://ssl.microsofttranslator.com' : 'http://www.microsofttranslator.com' ) + '/ajax/v2/widget.aspx?mode=manual&from=en&layout=ts'; var p = document.getElementsByTagName('head')[0] || document.documentElement; p.insertBefore(s, p.firstChild); }, 0); /* ]]> */ </script>";
+        }
+        else {
+          $msBtn = $msJs = $msLink = '';
+        }
+        if ($google) {
+          $ggBtn = " <button type='button' id='btnGG' onclick=\"toggleVisibility('GoogleTranslatorWidget', 'btnGG', 'Google');\">Show Google</button>";
+          $ggLink = "<a target=_blank href='https://translate.google.com/'>Google<sup>&reg;</sup></a>";
+          $ggJS = "<div id='GoogleTranslatorWidget' style='text-align:center;display:none;'><div id='google_translate_element'></div><script type='text/javascript'>
 function googleTranslateElementInit() {
   new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
 }
 </script><script type='text/javascript' src='//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'></script></div>";
+        }
+        else {
+          $ggBtn = $ggJS = $ggLink = '';
+        }
+        if ($google && $ms) {
+          $or = "or";
+        }
+        echo "See this page in your language (<code>{$this->locale}</code>) using machine translation. $ggLink $or $msLink Translator.";
+        echo $ggBtn . $msBtn . $ggJS . $msJS;
+        echo '</div>';
       }
       else {
-        $ggBtn = $ggJS = $ggLink = '';
+        echo '</div>';
       }
-      if ($google && $ms) {
-        $or = "or";
-      }
-      echo "See this page in your language (<code>{$this->locale}</code>) using machine translation. $ggLink $or $msLink Translator.";
-      echo $ggBtn . $msBtn . $ggJS . $msJS;
-      echo '</div>';
     }
 
   }

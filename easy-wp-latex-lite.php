@@ -3,7 +3,7 @@
   Plugin Name: Easy WP LaTeX
   Plugin URI: http://www.thulasidas.com/plugins/easy-latex
   Description: Easiest way to show mathematical equations on your blog using LaTeX. Go to <a href="options-general.php?page=easy-wp-latex-lite.php">Settings &rarr; Easy WP LaTeX</a> to set it up, or use the "Settings" link on the right.
-  Version: 4.00
+  Version: 4.10
   Author: Manoj Thulasidas
   Author URI: http://www.thulasidas.com
  */
@@ -34,32 +34,121 @@ else {
 
   class EzLaTeX extends EzBasePlugin {
 
+    var $adminMsg;
+    // "http://l.wordpress.com/latex.php?latex=";
+    // "http://www.bytea.net/cgi-bin/mimetex.cgi?formdata=";
+    var $server = "http://l.wordpress.com/latex.php";
+    // $img_format should be 'gif' when using mimetex service.
+    var $img_format = "png";
+
     function EzLaTeX() { //constructor
-      parent::__construct("easy-latex", "Easy WP LaTeX", __FILE__);
-    }
-
-    function init() {
-      $this->getAdminOptions();
-    }
-
-    //Returns an array of admin options
-    function getAdminOptions() {
-      $mThemeName = get_option('stylesheet');
-      $mOptions = "ezLaTeX" . $mThemeName;
-      $ezLaTeXAdminOptions = array(
-          'text_color' => 'FFFFFF',
-          'bg_color' => '00000',
-          'tag' => 'math',
-          'size' => '0');
-
-      $ezTeXOptions = get_option($mOptions);
-      if (!empty($ezTeXOptions)) {
-        foreach ($ezTeXOptions as $key => $option) {
-          $ezLaTeXAdminOptions[$key] = stripslashes($option);
-        }
+      parent::__construct("easy-latex", "Easy LaTeX", __FILE__);
+      $this->prefix = 'ezLaTeX';
+      $defaultOptions = $this->mkDefaultOptions();
+      $this->optionName = $this->prefix . get_option('stylesheet');
+      $this->options = get_option($this->optionName);
+      if (empty($this->options)) {
+        $this->options = $defaultOptions;
       }
-      update_option($mOptions, $ezLaTeXAdminOptions);
-      return $ezLaTeXAdminOptions;
+      else {
+        $this->options = array_merge($defaultOptions, $this->options);
+      }
+    }
+
+    function mkDefaultOptions() {
+      $defaultOptions = array(
+          'text_color' => '00000',
+          'bg_color' => 'FFFFFF',
+          'tag' => 'math',
+          'size' => '0') +
+              parent::mkDefaultOptions();
+      return $defaultOptions;
+    }
+
+    function mkFormulaURL($text = '', $size = '') {
+      if (empty($size)) {
+        $size = $this->options['size'];
+      }
+      if (empty($text)) {
+        $text = "(a+b)^2 = a^2 + b^2 + 2ab";
+      }
+      $text = rawurlencode($text);
+      $url = $this->server . htmlspecialchars("?latex=$text&bg=") . "{$this->options['bg_color']}&fg={$this->options['text_color']}&s=$size";
+      return $url;
+    }
+
+    function mkSizeLabel($label, $size) {
+      $url = $this->mkFormulaURL('', $size);
+      $img = "<span style='width:70px;display:inline-block'>$label</span><img style='vertical-align:-40%;' alt='Formula @ size=$size' src='$url' />";
+      return $img;
+    }
+
+    function mkHelpTags() {
+      $this->helpTags = array();
+      $o = new EzHelpTag('help0');
+      $o->title = __('Click for help', 'easy-latex');
+      $o->tipTitle = __('How to use this plugin', 'easy-latex');
+      $o->desc = __('How to use this plugin', 'easy-latex');
+      $this->helpTags[] = $o;
+
+      $o = new EzHelpTag('help1');
+      $o->title = __('Click for help', 'easy-latex');
+      $o->tipTitle = __('How to tweak the displayed formulas', 'easy-latex');
+      $o->desc = __('Need to control how the formulas appear?', 'easy-latex');
+      $this->helpTags[] = $o;
+
+      $o = new EzHelpTag('help2');
+      $o->title = __('Click for help', 'easy-latex');
+      $o->tipTitle = __('How to set up the plugin', 'easy-latex');
+      $o->desc = __('Change colors, tags, formula font sizes etc.', 'easy-latex');
+      $this->helpTags[] = $o;
+
+      $o = new EzHelpPopUp('http://wordpress.org/extend/plugins/easy-wp-latex-lite/');
+      $o->title = __('Click for help', 'easy-latex');
+      $o->desc = __('Check out the FAQ and rate this plugin.', 'easy-latex');
+      $this->helpTags[] = $o;
+    }
+
+    function mkEzOptions() {
+      if (!empty($this->ezOptions)) {
+        return;
+      }
+
+      parent::mkEzOptions();
+
+      $o = new EzColorPicker('text_color');
+      $o->desc = __("Text Color: ", 'easy-latex');
+      $o->labelWidth = '220px';
+      $o->style = 'width:70px;float:right';
+      $o->after = '<br />';
+      $this->ezOptions['text_color'] = clone $o;
+
+      $o = new EzColorPicker('bg_color');
+      $o->desc = __("Background Color: ", 'easy-latex');
+      $o->labelWidth = '220px';
+      $o->style = 'width:70px;float:right';
+      $o->after = '<br /><br />';
+      $this->ezOptions['bg_color'] = clone $o;
+
+      $o = new EzRadioBox('tag');
+      $o->desc = "<br /><b>" . __('Bracketting Tags', 'easy-latex') . "</b><br />";
+      $o->title = __('Select how you want to bracket your equations.', 'easy-latex');
+      $o->addChoice('math', 'math', __('[math] ... [/math] phpBB Style', 'easy-latex'))->after = "<br />";
+      $o->addChoice('latex', 'latex', __('$$ ... $$  LaTeX Style', 'easy-latex'))->after = "<br />";
+      $o->addChoice('mtype', 'mtype', __('\[ ... \] MathType Style', 'easy-latex'));
+      $o->after = "<br />";
+      $this->ezOptions['tag'] = clone $o;
+
+      $o = new EzRadioBox('size');
+      $o->desc = "<b>" . __('LaTeX Equation Font Size', 'easy-latex') . "</b>";
+      $o->title = __('Choose the size of the LaTeX equations to match your font size', 'easy-latex');
+      $o->addChoice('0', '0', $this->mkSizeLabel(__('Small', 'easy-latex'), 0))->after = "<br /><br />";
+      $o->addChoice('1', '1', $this->mkSizeLabel(__('Medium', 'easy-latex'), 1))->after = "<br /><br />";
+      $o->addChoice('2', '2', $this->mkSizeLabel(__('Large', 'easy-latex'), 2))->after = "<br /><br />";
+      $o->addChoice('3', '3', $this->mkSizeLabel(__('X-Large', 'easy-latex'), 3))->after = "<br /><br />";
+      $o->addChoice('4', '4', $this->mkSizeLabel(__('XX-Large', 'easy-latex'), 4))->after = "<br /><br />";
+      $o->after = "<br />";
+      $this->ezOptions['size'] = clone $o;
     }
 
     //Prints out the admin page
@@ -68,53 +157,36 @@ else {
       if (empty($ez)) {
         return;
       }
-      $slug = $this->slug;
-      $mThemeName = get_option('stylesheet');
-      $mOptions = "ezLaTeX" . $mThemeName;
-      $ezTeXOptions = $this->getAdminOptions();
+      $this->handleSubmits();
+      echo $this->adminMsg;
 
-      if (isset($_POST['update_ezLaTeXSettings'])) {
-        if (isset($_POST['ezLaTeX_textColor'])) {
-          $ezTeXOptions['text_color'] = $_POST['ezLaTeX_textColor'];
-        }
-        if (isset($_POST['ezLaTeX_bgColor'])) {
-          $ezTeXOptions['bg_color'] = $ezTeXOptions['bg_color'] = $_POST['ezLaTeX_bgColor'];
-        }
-        if (isset($_POST['ezLaTeX_tag'])) {
-          $ezTeXOptions['tag'] = $_POST['ezLaTeX_tag'];
-        }
-        if (isset($_POST['ezLaTeX_size'])) {
-          $ezTeXOptions['size'] = $_POST['ezLaTeX_size'];
-        }
-
-        update_option($mOptions, $ezTeXOptions);
-        ?>
-        <div class="updated"><p><strong>"Settings Updated."</strong></p></div>
-        <?php
-      }
+      $this->mkEzOptions();
+      $this->setOptionValues();
+      $this->mkHelpTags();
 
       echo '<script type="text/javascript" src="' . $this->plgURL . '/ezColor/jscolor.js"></script>';
       echo '<script type="text/javascript" src="' . $this->plgURL . '/wz_tooltip.js"></script>';
       ?>
 
       <div class="wrap" style="width:1000px">
-        <h2>Easy WP LaTeX Setup</h2>
+        <h2>Easy WP LaTeX <?php echo $this->strPro; ?> Setup
+          <a href="http://validator.w3.org/" target="_blank"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Transitional" title="Easy AdSense Admin Page is certified Valid XHTML 1.0 Transitional" height="31" width="88" class="alignright"/></a>
+        </h2>
 
-        <h3>Instructions</h3>
         <table style="width:100%">
           <tr style="vertical-align:top">
-            <td>
-              <ul style="padding-left:10px;list-style-type:circle; list-style-position:inside;" >
-                <li>
-                  Bracket your LaTeX formula with the tags. Example, type in
-                  <code>[math](a+b)^2 = a^2 + b^2 + 2ab[/math]</code> and you will get:
-                  <img src="http://l.wordpress.com/latex.php<?php echo htmlspecialchars('?latex=(a%2bb)^2%20=%20a^2%20%2b%20b^2%20%2b%202ab&bg=EAF3FA&s=0'); ?>" alt="latex" />
-                </li>
-                <li>Use the exclamation mark as the first character to generate a displayed equation (i.e., centered, on its own line): <code>[math]!(a+b)^2[/math]</code>.
-                </li>
-                <li>Use the exclamation mark as the last character to suppress formula output: <code>[math](a+b)^2![/math]</code>.
-                </li>
-              </ul>
+            <td style="width:40%">
+              <h3>
+                <?php
+                _e('Instructions', 'easy-latex');
+                echo "</h3>\n<ul style='padding-left:10px;list-style-type:circle; list-style-position:inside;'>\n";
+                foreach ($this->helpTags as $help) {
+                  echo "<li>";
+                  $help->render();
+                  echo "</li>\n";
+                }
+                ?>
+                </ul>
             </td>
 
             <?php include ($this->plgDir . '/head-text.php'); ?>
@@ -122,170 +194,124 @@ else {
           </tr>
         </table>
 
+        <h3>
+          <?php
+          printf(__('Options (for the %s theme)', 'easy-latex'), get_option('stylesheet'));
+          ?>
+        </h3>
         <form method="post" action="#">
-
-          <h3>Options (for the <?php echo $mThemeName; ?> theme)</h3>
+          <?php
+          $this->renderNonce();
+          $ez->renderNags($this->options);
+          ?>
           <table>
             <tr style="vertical-align:top">
-
-              <td style="width:35%">
-                <table>
-                  <tr><th scope="row" colspan="3" title="Decide the text and background color for your equations to match your theme."><b>Colors</b></th></tr>
-                  <tr>
-                    <td style="width:10px">&nbsp;</td>
-                    <td>
-                      Text Color:
-                    </td>
-                    <td>
-                      <input type="text" style="border:0px solid;" class="color {hash:false,caps:true,pickerFaceColor:'transparent',pickerFace:3,pickerBorder:0,pickerInsetColor:'black'}" value="<?php echo $ezTeXOptions['text_color']; ?>" name="ezLaTeX_textColor" size="6" />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="width:10px">&nbsp;</td>
-                    <td>
-                      Background Color:
-                    </td>
-                    <td>
-                      <input type="text" style="border:0px solid;" class="color {hash:false,caps:true,pickerFaceColor:'transparent',pickerFace:3,pickerBorder:0,pickerInsetColor:'black'}" value="<?php echo $ezTeXOptions['bg_color']; ?>" name="ezLaTeX_bgColor" size="6" />
-                    </td>
-                  </tr>
-                </table>
-                <br />
-
-                <table>
-                  <tr><th scope="row"  colspan="2" title="Decide the tags to bracket your LaTeX code."><b>Bracketting Tags</b></th></tr>
-                  <tr>
-                    <td style="width:10px">&nbsp;</td>
-                    <td>
-                      <label for="ezLaTeX_tag_math">
-                        <input type="radio" id="ezLaTeX_tag_math" name="ezLaTeX_tag" value="math" <?php
-                        if ($ezTeXOptions['tag'] == "math") {
-                          echo 'checked="checked"';
-                        }
-                        ?> /> &nbsp; [math] ... [/math]&nbsp; phpBB Style</label><br />
-
-                      <label for="ezLaTeX_tag_dollar">
-                        <input type="radio" id="ezLaTeX_tag_dollar" name="ezLaTeX_tag" value="latex" <?php
-                        if ($ezTeXOptions['tag'] == "latex") {
-                          echo 'checked="checked"';
-                        }
-                        ?> /> &nbsp; $$ ... $$  &nbsp;&nbsp; LaTeX Style</label><br />
-
-                      <label for="ezLaTeX_tag_mtype">
-                        <input type="radio" id="ezLaTeX_tag_mtype" name="ezLaTeX_tag" value="mtype" <?php
-                        if ($ezTeXOptions['tag'] == "mtype") {
-                          echo 'checked="checked"';
-                        }
-                        ?> /> &nbsp; \[ ... \] &nbsp;&nbsp; MathType Style</label><br />
-
-                    </td>
-                  </tr>
-                </table>
-
+              <td style="width:50%">
+                <?php
+                echo "<b>" . __("Color Configuration", 'easy-latex') .
+                "</b><br /><br />";
+                $this->ezOptions['text_color']->render();
+                $this->ezOptions['bg_color']->render();
+                $this->ezOptions['tag']->render();
+                ?>
               </td>
-
               <td>
-
-                <table>
-                  <tr><th scope="row" colspan="2" title="Choose the font size for your equations."><b>LaTeX Equation Font Size</b></th></tr>
-                  <tr>
-                    <td style="width:15px"></td>
-                    <td>
-                      <label for="ezLaTeX_size0">
-                        <input type="radio" id="ezLaTeX_size0" name="ezLaTeX_size" value="0" <?php
-                        if ($ezTeXOptions['size'] == "0") {
-                          echo 'checked="checked"';
-                        }
-                        ?> /> &nbsp;&nbsp; Small &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img style="vertical-align:-40%;" alt="latex" src="http://l.wordpress.com/latex.php<?php echo htmlspecialchars('?latex=(a%2bb)^2%20=%20a^2%20%2b%20b^2%20%2b%202ab&bg=' . $ezTeXOptions['bg_color'] . '&fg=' . $ezTeXOptions['text_color'] . '&s=0'); ?>" /></label><br /><br />
-
-                      <label for="ezLaTeX_size1">
-                        <input type="radio" id="ezLaTeX_size1" name="ezLaTeX_size" value="1" <?php
-                        if ($ezTeXOptions['size'] == "1") {
-                          echo 'checked="checked"';
-                        }
-                        ?> /> &nbsp;&nbsp; Medium &nbsp;&nbsp; <img style="vertical-align:-40%;" alt="latex" src="http://l.wordpress.com/latex.php<?php echo htmlspecialchars('?latex=(a%2bb)^2%20=%20a^2%20%2b%20b^2%20%2b%202ab&bg=' . $ezTeXOptions['bg_color'] . '&fg=' . $ezTeXOptions['text_color'] . '&s=1'); ?>" /></label><br /><br />
-
-                      <label for="ezLaTeX_size2">
-                        <input type="radio" id="ezLaTeX_size2" name="ezLaTeX_size" value="2" <?php
-                        if ($ezTeXOptions['size'] == "2") {
-                          echo 'checked="checked"';
-                        }
-                        ?> /> &nbsp;&nbsp; Large &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img style="vertical-align:-40%;" alt="latex" src="http://l.wordpress.com/latex.php<?php echo htmlspecialchars('?latex=(a%2bb)^2%20=%20a^2%20%2b%20b^2%20%2b%202ab&bg=' . $ezTeXOptions['bg_color'] . '&fg=' . $ezTeXOptions['text_color'] . '&s=2'); ?>" /></label><br /><br />
-
-                      <label for="ezLaTeX_size3">
-                        <input type="radio" id="ezLaTeX_size3" name="ezLaTeX_size" value="3" <?php
-                        if ($ezTeXOptions['size'] == "3") {
-                          echo 'checked="checked"';
-                        }
-                        ?> /> &nbsp;&nbsp; X-Large &nbsp;&nbsp; <img style="vertical-align:-40%;" alt="latex" src="http://l.wordpress.com/latex.php<?php echo htmlspecialchars('?latex=(a%2bb)^2%20=%20a^2%20%2b%20b^2%20%2b%202ab&bg=' . $ezTeXOptions['bg_color'] . '&fg=' . $ezTeXOptions['text_color'] . '&s=3'); ?>" /></label><br /><br />
-
-                      <label for="ezLaTeX_size4">
-                        <input type="radio" id="ezLaTeX_size4" name="ezLaTeX_size" value="4" <?php
-                        if ($ezTeXOptions['size'] == "4") {
-                          echo 'checked="checked"';
-                        }
-                        ?> /> &nbsp;&nbsp; XX-Large &nbsp; <img style="vertical-align:-40%;" alt="latex" src="http://l.wordpress.com/latex.php<?php echo htmlspecialchars('?latex=(a%2bb)^2%20=%20a^2%20%2b%20b^2%20%2b%202ab&bg=' . $ezTeXOptions['bg_color'] . '&fg=' . $ezTeXOptions['text_color'] . '&s=4'); ?>" /></label><br />
-
-                    </td>
-                  </tr>
-                </table>
-
+                <?php
+                $this->ezOptions['size']->render();
+                ?>
               </td>
             </tr>
-
+            <tr>
+              <td>
+                <br /><b><?php _e("Other Options", 'easy-latex'); ?></b><br />
+                <?php $this->ezOptions['kill_author']->render(); ?>
+              </td>
+              <td>
+                <?php
+                $ez->renderWhyPro($short = true);
+                ?>
+              </td>
+            </tr>
           </table>
 
           <div class="submit">
-            <input type="submit" name="update_ezLaTeXSettings" value="Save Changes" /></div>
-          <?php
-          $this->ezTran->renderTranslator();
-          ?>
+            <?php
+            $this->renderSubmitButtons();
+            $this->ezTran->renderTranslator();
+            ?>
+          </div>
           <br />
         </form>
-        <div style="background-color:#fcf;padding:5px;border: solid 1px;margin:5px;">
-          <?php $ez->renderSupport(); ?>
-        </div>
-        <?php $ez->renderWhyPro(); ?>
+        <?php
+        $ez->renderWhyPro();
+        $ez->renderSupport();
+        include ($this->plgDir . '/tail-text.php');
+        ?>
 
-        <?php include ($this->plgDir . '/tail-text.php'); ?>
-
-        <h3>Credits</h3>
-        <table style="width:100%">
+        <table class="form-table" >
+          <tr><th scope="row"><b><?php _e('Credits', 'easy-latex'); ?></b></th></tr>
           <tr><td>
               <ul style="padding-left:10px;list-style-type:circle; list-style-position:inside;" >
                 <li>
-                  <b>Easy WP LaTeX</b> is based on <b>Latex for WordPess</b> by zhiqiang, and shares some features and core engine code with it.
-                </li>
-                <li>
-                  <?php printf(__('%s uses the excellent Javascript/DHTML tooltips by %s', 'easy-adsenser'), '<b>Easy WP LaTeX</b>', '<a href="http://www.walterzorn.com" target="_blank" title="Javascript, DTML Tooltips"> Walter Zorn</a>.');
+                  <?php
+                  printf("%s is based on <b>Latex for WordPess</b> by zhiqiang, and shares some features and core engine code with it.", "<b>Easy WP LaTeX $this->strPro</b>");
                   ?>
                 </li>
                 <li>
-                  It also uses the excellent Javascript color picker by <a href="http://jscolor.com" target="_blank" title="Javascript color picker"> JScolor</a>.
+                  <?php printf(__('%s uses the excellent Javascript/DHTML tooltips by %s', 'easy-latex'), '<b>Easy WP LaTeX' . $this->strPro . '</b>', '<a href="http://www.walterzorn.com" target="_blank" title="Javascript, DTML Tooltips"> Walter Zorn</a>.');
+                  ?>
                 </li>
               </ul>
             </td>
           </tr>
         </table>
+        <div id="help0" style='display:none'>
+          <ul>
+            <?php
+            echo "<li>";
+            _e('Enter LaTeX formulas wherever you need in your posts or pages.', 'easy-latex');
+            echo "</li><li>";
+            _e('Bracket each one of your LaTeX formulas with the tags you specify in the option below. The default tag is <code>[math][/math].</code> For example, type in <br /><code>[math](a+b)^2 = a^2 + b^2 + 2ab[/math]</code> and you will get:', 'easy-latex');
+            echo $this->mkSizeLabel('', '1');
+            echo "</li>";
+            ?>
+          </ul>
+        </div>
+
+        <div id="help1" style='display:none'>
+          <ul>
+            <?php
+            echo "<li>";
+            _e('Use the exclamation mark as the first character to generate a displayed equation (i.e., centered, on its own line): <code>[math]!(a+b)^2[/math]</code>', 'easy-latex');
+            echo "</li><li>";
+            _e('Use the exclamation mark as the last character to suppress formula output: <code>[math](a+b)^2![/math]</code>.', 'easy-latex');
+            echo "</li>";
+            ?>
+          </ul>
+        </div>
+
+        <div id="help2" style='display:none'>
+          <ul>
+            <?php
+            echo "<li>";
+            _e('Use the color pickers to under Color Configuration to match the forumula background and forground colors to your theme colors. The settings will be stored for each theme, so that if you return to an old theme, you do not have to re-configure the colors.', 'easy-latex');
+            echo "</li><li>";
+            _e('The plugin can use different tags to identify your formula text. By default, it will look for segements enclosed in <code>[math]</code> and <code>[/math]</code> and render them as LaTeX formulas. If you prefer other bracketting tags, use the option below.', 'easy-latex');
+            echo "</li><li>";
+            _e('The size of the formulas can be tweaked to match the text size on your pages. Five sizes are supported as shown below.', 'easy-latex');
+            echo "</li>";
+            ?>
+          </ul>
+        </div>
 
       </div>
 
       <?php
     }
 
-//End function printAdminPage()
-
-    var $server = "http://l.wordpress.com/latex.php?latex=";
-    var $img_format = "png";
-
-    // $img_format should be 'gif' when using mimetex service.
-    // Other servers: (note that the syntax for color may be different)
-    // "http://l.wordpress.com/latex.php?latex=";
-    // "http://www.bytea.net/cgi-bin/mimetex.cgi?formdata=";
-
     function parseTex($toParse) {
-      $ezTeXOptions = $this->getAdminOptions();
-      $tag = $ezTeXOptions['tag'];
+      // tag specification (which tags are to be replaced)
+      $tag = $this->options['tag'];
       // $regex = '#' . $tag1 . '  *(.*?)' . $tag2 . '#si';
       $regex = '#\[math\] *(.*?)\[/math\]#si';
       if ($tag == 'latex') {
@@ -311,24 +337,15 @@ else {
         $formula_text = substr($formula_text, 1);
       }
 
-      $ezTeXOptions = $this->getAdminOptions();
-      $textColor = $ezTeXOptions['text_color'];
-      $bgColor = $ezTeXOptions['bg_color'];
-      $Size = $ezTeXOptions['size'];
+      $formula_url = $this->mkFormulaURL($formula_text);
 
-      $formula_hash = md5($formula_text . $bgColor . $textColor . $Size);
-      $formula_filename = 'tex_' . $formula_hash . '.' . $this->img_format;
-      $formula_url = $this->server . rawurlencode($formula_text) .
-              '&bg=' . $bgColor .
-              '&fg=' . $textColor .
-              '&s=' . $Size;
 
-      $formula_output = '<img src="' . $formula_url . '" title="' . $formula_text .
-              '" style="vertical-align:-20%;" class="tex" alt="' . $formula_text . '" />';
+      $style = "style='vertical-align:1%'";
+      $formula_output = "<img src='$formula_url' title='$formula_text' $style class='tex' alt='$formula_text' />";
 
-      // returning the image-tag, referring to the image
-      if ($imgtext)
-        return "<center>$formula_output</center>";
+      if ($imgtext) {
+        return '<center>' . $formula_output . '</center>';
+      }
 
       return $formula_output;
     }
@@ -343,30 +360,28 @@ else {
 
   }
 
-  //End Class ezLaTeX
+} //End Class ezLaTeX
 
-  if (class_exists("EzLaTeX")) {
-    $ezLaTeX = new EzLaTeX();
-    if (isset($ezLaTeX)) {
-      if (!function_exists("ezLaTeX_ap")) {
+if (class_exists("EzLaTeX")) {
+  $ezLaTeX = new EzLaTeX();
+  if (isset($ezLaTeX)) {
+    if (!function_exists("ezLaTeX_ap")) {
 
-        function ezLaTeX_ap() {
-          global $ezLaTeX;
-          if (function_exists('add_options_page')) {
-            $mName = 'Easy WP LaTeX';
-            add_options_page($mName, $mName, 'activate_plugins', basename(__FILE__), array($ezLaTeX, 'printAdminPage'));
-          }
+      function ezLaTeX_ap() {
+        global $ezLaTeX;
+        if (function_exists('add_options_page')) {
+          $mName = 'Easy WP LaTeX';
+          add_options_page($mName, $mName, 'activate_plugins', basename(__FILE__), array($ezLaTeX, 'printAdminPage'));
         }
-
       }
-      add_filter('the_title', array($ezLaTeX, 'parseTex'), 1);
-      add_filter('the_content', array($ezLaTeX, 'parseTex'), 1);
-      add_filter('the_excerpt', array($ezLaTeX, 'parseTex'), 1);
-      add_filter('comment_text', array($ezLaTeX, 'parseTex'), 1);
 
-      add_action('admin_menu', 'ezLaTeX_ap');
-      add_action('activate_' . basename($ezLaTeX->plgDir) . '/' . basename(__FILE__), array($ezLaTeX, 'init'));
-      add_filter('plugin_action_links', array($ezLaTeX, 'plugin_action'), -10, 2);
     }
+    add_filter('the_title', array($ezLaTeX, 'parseTex'), 1);
+    add_filter('the_content', array($ezLaTeX, 'parseTex'), 1);
+    add_filter('the_excerpt', array($ezLaTeX, 'parseTex'), 1);
+    add_filter('comment_text', array($ezLaTeX, 'parseTex'), 1);
+
+    add_action('admin_menu', 'ezLaTeX_ap');
+    add_filter('plugin_action_links', array($ezLaTeX, 'plugin_action'), -10, 2);
   }
 }
