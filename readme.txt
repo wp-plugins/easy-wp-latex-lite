@@ -3,7 +3,7 @@ Contributors: manojtd
 Donate link: http://buy.thulasidas.com/easy-latex
 Tags: latex, tex, math, mathematics, equation, equations, formatting, formula, formulas
 Requires at least: 2.5
-Tested up to: 3.8
+Tested up to: 3.9
 Stable tag: 4.10
 License: GPL2 or later
 

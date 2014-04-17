@@ -602,6 +602,10 @@ if (!class_exists("EzBasePlugin")) {
       }
     }
 
+    function renderNonce() {
+      wp_nonce_field("$this->prefix-submit", "$this->prefix-nonce");
+    }
+
     function renderSubmitButtons() {
       $update = new EzSubmit('saveChanges');
       $update->desc = __('Save Changes', 'easy-common');
@@ -714,6 +718,18 @@ if (!class_exists("EzBasePlugin")) {
       $this->ezAdmin->domain = $this->domain;
       $this->ezAdmin->plgFile = $this->plgFile;
       return $this->ezAdmin;
+    }
+
+    function info($hide = true) {
+      if (!function_exists('get_plugin_data')) {
+        require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+      }
+      $plugin_data = get_plugin_data($this->plgFile);
+      $str = "{$plugin_data['Name']} V{$plugin_data['Version']}";
+      if ($hide) {
+        $str = "<!-- $str -->";
+      }
+      return $str;
     }
 
     function printAdminPage() {
