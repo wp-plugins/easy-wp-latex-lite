@@ -3,7 +3,7 @@
   Plugin Name: Easy WP LaTeX
   Plugin URI: http://www.thulasidas.com/plugins/easy-latex
   Description: Easiest way to show mathematical equations on your blog using LaTeX. Go to <a href="options-general.php?page=easy-wp-latex-lite.php">Settings &rarr; Easy WP LaTeX</a> to set it up, or use the "Settings" link on the right.
-  Version: 4.11
+  Version: 4.12
   Author: Manoj Thulasidas
   Author URI: http://www.thulasidas.com
  */
@@ -26,7 +26,10 @@
  */
 
 if (class_exists("EzLaTeX")) {
-  die("<strong><em>Easy WP LaTeX Pro</em></strong> seems to be active.<br />Please use the Pro version, or deactivate it before activating <strong><em>Easy WP LaTeX Lite</em></strong>.");
+  $plg = "Easy WP LaTeX Lite";
+  $lite = plugin_basename(__FILE__);
+  include_once('ezDenyLite.php');
+  ezDenyLite($plg, $lite);
 }
 else {
 
