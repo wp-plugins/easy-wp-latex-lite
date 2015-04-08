@@ -3,7 +3,7 @@
   Plugin Name: Easy WP LaTeX
   Plugin URI: http://www.thulasidas.com/plugins/easy-latex
   Description: Easiest way to show mathematical equations on your blog using LaTeX. Go to <a href="options-general.php?page=easy-wp-latex-lite.php">Settings &rarr; Easy WP LaTeX</a> to set it up, or use the "Settings" link on the right.
-  Version: 4.30
+  Version: 4.50
   Author: Manoj Thulasidas
   Author URI: http://www.thulasidas.com
  */
@@ -68,7 +68,7 @@ else {
       return $defaultOptions;
     }
 
-    function mkFormulaURL($text = '', $size = '') {
+    function mkFormulaURL($text = '', $size = '', $escape = false) {
       if (empty($size)) {
         $size = $this->options['size'];
       }
@@ -76,12 +76,16 @@ else {
         $text = "(a+b)^2 = a^2 + b^2 + 2ab";
       }
       $text = rawurlencode($text);
-      $url = $this->server . htmlspecialchars("?latex=$text&bg=") . "{$this->options['bg_color']}&fg={$this->options['text_color']}&s=$size";
+      $options = "&bg={$this->options['bg_color']}&fg={$this->options['text_color']}&s=$size";
+      if ($escape) {
+        $options = htmlspecialchars($options);
+      }
+      $url = $this->server . "?latex=$text$options";
       return $url;
     }
 
     function mkSizeLabel($label, $size) {
-      $url = $this->mkFormulaURL('', $size);
+      $url = $this->mkFormulaURL('', $size, true);
       $img = "<span style='width:70px;display:inline-block'>$label</span><img style='vertical-align:-40%;' alt='Formula @ size=$size' src='$url' />";
       return $img;
     }
@@ -110,13 +114,17 @@ else {
       $o->title = __('Click for help', 'easy-latex');
       $o->desc = __('Check out the FAQ and rate this plugin.', 'easy-latex');
       $this->helpTags[] = $o;
+
+      $o = new EzHelpPopUp('http://www.thulasidas.com/of-rotation-lt-and-acceleration/2/');
+      $o->title = __('Click to view', 'easy-latex');
+      $o->desc = __('See a demo page that uses this plugin.', 'easy-latex');
+      $this->helpTags[] = $o;
     }
 
     function mkEzOptions() {
       if (!empty($this->ezOptions)) {
         return;
       }
-
       parent::mkEzOptions();
 
       $o = new EzColorPicker('text_color');
@@ -172,9 +180,7 @@ else {
       ?>
 
       <div class="wrap" style="width:1000px">
-        <h2>Easy WP LaTeX <?php echo $this->strPro; ?> Setup
-          <a href="http://validator.w3.org/" target="_blank"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Transitional" title="Easy AdSense Admin Page is certified Valid XHTML 1.0 Transitional" height="31" width="88" class="alignright"/></a>
-        </h2>
+        <h2>Easy WP LaTeX <?php echo $this->strPro; ?> Setup</h2>
 
         <table style="width:100%">
           <tr style="vertical-align:top">
@@ -328,29 +334,29 @@ else {
 
     function createTex($toTex) {
       // clean up <br /> and other junk
-      $formula_text = str_replace(array("\r\n", "\n", "\r"), "", $toTex[1]);
-      $imgtext = false;
+      $formula = str_replace(array("\r\n", "\n", "\r"), "", $toTex[1]);
+      $center = false;
 
-      if (substr($formula_text, -1, 1) == "!") {
-        return "$$" . substr($formula_text, 0, -1) . "$$";
+      if (substr($formula, -1, 1) == "!") {
+        return "$$" . substr($formula, 0, -1) . "$$";
       }
 
-      if (substr($formula_text, 0, 1) == "!") {
-        $imgtext = true;
-        $formula_text = substr($formula_text, 1);
+      if (substr($formula, 0, 1) == "!") {
+        $center = true;
+        $formula = substr($formula, 1);
       }
 
-      $formula_url = $this->mkFormulaURL($formula_text);
+      $url = $this->mkFormulaURL($formula);
 
 
       $style = "style='vertical-align:1%'";
-      $formula_output = "<img src='$formula_url' title='$formula_text' $style class='tex' alt='$formula_text' />";
+      $ret = "<img src='$url' title='$formula' $style class='tex' alt='$formula' />";
 
-      if ($imgtext) {
-        return '<center>' . $formula_output . '</center>';
+      if ($center) {
+        return '<center>' . $ret . '</center>';
       }
 
-      return $formula_output;
+      return $ret;
     }
 
     function plugin_action($links, $file) {

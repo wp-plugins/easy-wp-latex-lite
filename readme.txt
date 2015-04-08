@@ -4,7 +4,7 @@ Donate link: http://buy.thulasidas.com/easy-latex
 Tags: latex, tex, math, mathematics, equation, equations, formatting, formula, formulas
 Requires at least: 2.5
 Tested up to: 4.1
-Stable tag: 4.30
+Stable tag: 4.50
 License: GPL2 or later
 
 Easy WP LaTeX provides a very easy way to display math and equations in your posts using LaTeX. Lets you customize colors and sizes of your equations.
@@ -24,15 +24,21 @@ My plugin aims to be flexible, and easy to install (no geeky code editing etc.).
 
 = Pro Version =
 
-This release is the freely distributed version of *Easy WP LaTeX*. It is fully functional. But the **[Pro Version](http://buy.thulasidas.com/easy-latex/ "Pro version of the Easy WP LaTeX plugin for only $2.95")** gives you more features and benefits. For instance, it gives you an option to cache the formula images so that your pages load faster. New features and bug fixes will first appear in the Pro version before being ported to this freely distributed edition. Also available in the Pro version is an option to align the formula image with respect to the text around it.
+This release is the freely distributed version of *Easy WP LaTeX*. It is fully functional. But the **[Pro Version](http://buy.thulasidas.com/easy-latex "Pro version of the Easy WP LaTeX plugin for only $4.95")** gives you more features and benefits.
+
+1. In the Pro version, the plugin caches the formula images so that your pages load faster.
+2. You also get an option to align the formula image with respect to the text around it by tweaking the vertical alignment of your equations.
+
+New features and bug fixes will first appear in the Pro version before being ported to this freely distributed edition.
 
 = Alternatives =
+
 1. *Latex for WordPess* by zhiqiang, on which this plugin is based, has caching and JS based image generation. But it lacks intuitive color matching and theme-dependent settings.
 2. *JetPack* also lets you insert LaTeX formulas, again color matching is not easy.
 
 == Upgrade Notice ==
 
-Compatibility with WP4.1.
+Admin page and documentation changes.
 
 == Screenshots ==
 
@@ -41,10 +47,13 @@ Compatibility with WP4.1.
 
 == Installation ==
 
-1. Upload the *Easy WP LaTeX* plugin (the whole easy-wp-latex-lite folder) to the '/wp-content/plugins/' directory.
-2. Activate the plugin through the 'Plugins' menu in WordPress.
-3. Go to the Setup -> Easy WP LaTeX and set options.
-4. If instructed, set the file permission of the cache directory.
+= Searching =
+
+The easiest way to install this plugin is to use the WordPress Admin interface. Go to your admin dashboard, find the "Plugins" menu, and click on "Add New". Search for this plugin and click on "Install Now" and follow the WordPress instructions.
+
+= Uploading =
+
+If you want to download it and manually install, you can again use the WordPress dashboard interface. First download the plugin zip file to your local computer. Then go to your admin dashboard, find the "Plugins" menu, and click on "Add New". After clicking on the "Add New" menu item as above, click on "Upload" (below the title "Install Plugins" near the top). Browse for your downloaded zip file, upload it and activate the plugin.
 
 == Frequently Asked Questions ==
 
@@ -57,6 +66,7 @@ Two possible reasons.
 
 == Change Log ==
 
+* V4.50: Admin page and documentation changes. [April 8, 2015]
 * V4.30: Compatibility with WP4.1. [Jan 8, 2015]
 * V4.21: Minor change to the admin interface. [Sep 9, 2011]
 * V4.20: Compatibility with WP4.0. [Sep 7, 2014]
