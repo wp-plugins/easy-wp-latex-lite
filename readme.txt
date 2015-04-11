@@ -4,7 +4,7 @@ Donate link: http://buy.thulasidas.com/easy-latex
 Tags: latex, tex, math, mathematics, equation, equations, formatting, formula, formulas
 Requires at least: 2.5
 Tested up to: 4.1
-Stable tag: 4.50
+Stable tag: 4.51
 License: GPL2 or later
 
 Easy WP LaTeX provides a very easy way to display math and equations in your posts using LaTeX. Lets you customize colors and sizes of your equations.
@@ -12,6 +12,10 @@ Easy WP LaTeX provides a very easy way to display math and equations in your pos
 == Description ==
 
 *Easy WP LaTeX* provides a very easy way to display equations or mathematical formulas  (typed in as TeX or LaTeX code) in your posts. It lets you customize colors and sizes of your equations to match your blog theme.
+
+= Live Demo =
+
+**If you would like to see this plugin action, visit [this physics post](http://www.thulasidas.com/of-rotation-lt-and-acceleration/2/ "On Rotation and Lorentz Transformation"). You can even play with its admin interface at the [live demo site](http://demo.thulasidas.com/easy-latex "Play with Easy WP LaTeX Admin Interface").**
 
 Most LaTeX/equation plugins I have seen suffer from a few drawbacks.
 
@@ -38,7 +42,7 @@ New features and bug fixes will first appear in the Pro version before being por
 
 == Upgrade Notice ==
 
-Admin page and documentation changes.
+Launching a demo site.
 
 == Screenshots ==
 
@@ -66,6 +70,7 @@ Two possible reasons.
 
 == Change Log ==
 
+* V4.51: Launching a demo site. [April 11, 2015]
 * V4.50: Admin page and documentation changes. [April 8, 2015]
 * V4.30: Compatibility with WP4.1. [Jan 8, 2015]
 * V4.21: Minor change to the admin interface. [Sep 9, 2011]

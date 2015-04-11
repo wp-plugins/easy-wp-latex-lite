@@ -136,7 +136,7 @@ $myPlugins['theme-tweaker'] = array('value' => 'Theme Tweaker',
 <li>Ability to tweak colors in both parent and child theme style files.</li>');
 
 $myPlugins['easy-quiz'] = array('value' => 'Easy Quiz',
-    'price' => '2.95',
+    'price' => '3.95',
     'share' => false,
     'long' => true,
     'blurb' => '<em><strong>Easy Quiz</strong></em> is a jQuery quiz plugin that ',
